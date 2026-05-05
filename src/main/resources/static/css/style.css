@@ -1,0 +1,147 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #0c0c0c;
+  color: #e8e8e8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Header ── */
+.header {
+  padding: 3.5rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.header-emoji {
+  font-size: 2.25rem;
+  display: block;
+  margin-bottom: 0.6rem;
+  line-height: 1;
+}
+
+.header-title {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+/* ── Categories ── */
+.categories {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0 1.5rem 3.5rem;
+  max-width: 720px;
+}
+
+.cat-btn {
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.38rem 1rem;
+  border-radius: 100px;
+  border: 1px solid #252525;
+  color: #555;
+  text-decoration: none;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.cat-btn:hover {
+  border-color: #444;
+  color: #aaa;
+}
+
+.cat-btn.active {
+  border-color: #e8e8e8;
+  color: #e8e8e8;
+}
+
+/* ── Quote ── */
+.quote-area {
+  flex: 1;
+  width: 100%;
+  max-width: 680px;
+  padding: 0 2rem 9rem;
+}
+
+.quote-text {
+  font-size: 1.55rem;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.7;
+  color: #e8e8e8;
+  margin-bottom: 1.75rem;
+}
+
+.quote-divider {
+  width: 2rem;
+  height: 1px;
+  background: #2a2a2a;
+  margin-bottom: 1rem;
+}
+
+.quote-meta {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #3d3d3d;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.quote-meta a {
+  color: #3d3d3d;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.quote-meta a:hover { color: #888; }
+
+.meta-dot {
+  color: #2a2a2a;
+}
+
+/* ── Empty state ── */
+.empty {
+  text-align: center;
+  color: #2a2a2a;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  padding: 4rem 0;
+}
+
+/* ── Next button ── */
+.next-btn {
+  position: fixed;
+  bottom: 2.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: inherit;
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.8rem 2.75rem;
+  border-radius: 100px;
+  background: #e8e8e8;
+  color: #0c0c0c;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+}
+
+.next-btn:hover {
+  opacity: 0.88;
+  color: #0c0c0c;
+}
