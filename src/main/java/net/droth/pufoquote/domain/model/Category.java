@@ -5,11 +5,10 @@ import java.util.List;
 /** Quote categories shown in the UI. NONE means the sentence is skipped during indexing. */
 public enum Category {
   FUNNY("Lustig"),
-  ABSURD("Absurd"),
-  INTERESTING("Interessant"),
-  PHILOSOPHICAL("Philosophisch"),
   DRAMATIC("Dramatisch"),
-  SELF_AWARE("Meta"),
+  INTERESTING("Interessant"),
+  SERIOUS("Ernst"),
+  META("Meta"),
   RANDOM("Alle"),
   NONE(null);
 
@@ -25,7 +24,7 @@ public enum Category {
 
   /** Categories shown as filter buttons in the UI (excludes NONE). */
   public static List<Category> uiValues() {
-    return List.of(RANDOM, FUNNY, ABSURD, INTERESTING, PHILOSOPHICAL, DRAMATIC, SELF_AWARE);
+    return List.of(RANDOM, FUNNY, DRAMATIC, INTERESTING, SERIOUS, META);
   }
 
   /** Parse a category from a string, defaulting to RANDOM on unknown input. */

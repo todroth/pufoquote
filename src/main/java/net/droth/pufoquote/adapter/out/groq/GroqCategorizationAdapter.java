@@ -29,27 +29,35 @@ public class GroqCategorizationAdapter implements CategorizationPort {
 
   // Each element is "label:score", e.g. "funny:4" or "none:1"
   private static final String PROMPT_BODY =
-      " Find sentences that are genuine gems — truly funny, surprising, or quotable."
-          + " You MUST label at least 27 out of every 30 sentences as 'none'."
-          + " Assign a non-none label ONLY when a sentence would make a stranger"
-          + " laugh, think, or want to listen to the episode. When in doubt: none.\n\n"
-          + "Labels — be precise, use exactly one:\n"
-          + "  funny      — genuinely funny; makes you laugh out loud\n"
-          + "  absurd     — bizarre or surreal in a striking way\n"
-          + "  interesting — surprising fact or unexpected insight, not just mildly interesting\n"
-          + "  philosophical — meaningfully thought-provoking, not just vague reflection\n"
-          + "  dramatic   — hilariously over-the-top about something trivial\n"
-          + "  self_aware — clever meta-commentary about the podcast itself\n"
-          + "  none       — everything else: filler, transitions, small talk, mundane facts,"
-          + " incomplete thoughts, garbled transcription\n\n"
+      " Find the rare gems in this German podcast transcript.\n\n"
+          + "FIRST — before labelling anything: if a sentence is garbled, grammatically broken"
+          + " beyond normal spoken German, contains clearly mis-transcribed words, or has no"
+          + " coherent meaning → label it 'none' and score 1. Do this check first.\n\n"
+          + "You MUST label at least 27 out of every 30 sentences as 'none'."
+          + " Assign a non-none label ONLY when a sentence would make a stranger laugh,"
+          + " think, or feel something. When in doubt: none.\n\n"
+          + "Labels — use exactly one, only when the sentence clearly stands out:\n"
+          + "  funny      — makes you laugh: a clever joke, funny observation, amusing"
+          + " wordplay, or something amusingly bizarre\n"
+          + "  dramatic   — hilariously over-the-top about something trivial; someone treating"
+          + " a minor annoyance as a catastrophe; maximum drama, minimum stakes\n"
+          + "  interesting — makes you think or want to repeat it: surprising fact, unexpected"
+          + " insight, or a clever observation worth mentioning to someone\n"
+          + "  serious    — a genuinely sincere, heartfelt, or unexpectedly real moment in an"
+          + " otherwise silly podcast\n"
+          + "  meta       — the hosts specifically noticing or joking about their own podcast"
+          + " format, their recurring habits, or the listener relationship; NOT general"
+          + " self-awareness or off-topic remarks\n"
+          + "  none       — everything else: small talk, transitions, mundane conversation,"
+          + " incomplete thoughts, garbled or mis-transcribed German\n\n"
           + "Score 1-5 — be strict:\n"
-          + "  1 = garbled, incoherent, or meaningless\n"
-          + "  2 = boring or unremarkable\n"
+          + "  1 = garbled, mis-transcribed, grammatically broken, or meaningless\n"
+          + "  2 = understandable but unremarkable\n"
           + "  3 = decent standalone quote\n"
-          + "  4 = memorable — would make someone smile or think\n"
+          + "  4 = memorable — would make someone smile, think, or feel something\n"
           + "  5 = exceptional — would make someone want to listen to the episode\n\n"
-          + "RULE: If a sentence gets a non-none label it must score at least 3."
-          + " Most non-none sentences should score 3-4; score 5 is rare.\n\n";
+          + "RULE: non-none sentences must score at least 3."
+          + " Most should score 3-4; score 5 is rare.\n\n";
 
   @Value("${groq.categorization-model:llama-3.1-8b-instant}")
   private final String model;
@@ -167,11 +175,10 @@ public class GroqCategorizationAdapter implements CategorizationPort {
     }
     return switch (label.toLowerCase().trim()) {
       case "funny" -> Category.FUNNY;
-      case "absurd" -> Category.ABSURD;
-      case "interesting" -> Category.INTERESTING;
-      case "philosophical" -> Category.PHILOSOPHICAL;
       case "dramatic" -> Category.DRAMATIC;
-      case "self_aware" -> Category.SELF_AWARE;
+      case "interesting" -> Category.INTERESTING;
+      case "serious" -> Category.SERIOUS;
+      case "meta" -> Category.META;
       default -> Category.NONE;
     };
   }
