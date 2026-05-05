@@ -17,6 +17,7 @@ services:
 
   app:
     build: .
+    image: ghcr.io/todroth/pufoquote:latest
     ports:
       - "8080:8080"
     environment:
@@ -25,12 +26,29 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
       - PODCAST_FEED_URL=${PODCAST_FEED_URL:-https://feeds.acast.com/public/shows/das-podcast-ufo}
       - TRANSCRIPTION_CACHE_DIR=/data/transcriptions
+      - THYMELEAF_CACHE=${THYMELEAF_CACHE:-false}
     volumes:
-      - transcriptions:/data/transcriptions
+      - ./transcriptions:/data/transcriptions
     depends_on:
       elasticsearch:
         condition: service_healthy
 
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      - DOMAIN=${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
 volumes:
   es_data:
-  transcriptions:
+  caddy_data:
+  caddy_config:
