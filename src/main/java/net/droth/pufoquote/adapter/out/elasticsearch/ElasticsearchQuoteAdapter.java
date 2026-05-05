@@ -1,14 +1,17 @@
 package net.droth.pufoquote.adapter.out.elasticsearch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.droth.pufoquote.domain.model.Category;
 import net.droth.pufoquote.domain.model.Quote;
+import net.droth.pufoquote.domain.model.QuoteContext;
 import net.droth.pufoquote.domain.port.out.QuoteRepositoryPort;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -82,6 +85,77 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
     } catch (IOException e) {
       log.error("Failed to find random quote: {}", e.getMessage(), e);
       return Optional.empty();
+    }
+  }
+
+  @Override
+  public Optional<Quote> findById(String id) {
+    try {
+      var response = esClient.get(g -> g.index(INDEX).id(id), QuoteDocument.class);
+      return Optional.ofNullable(response.source()).map(this::toDomain);
+    } catch (IOException e) {
+      log.error("Failed to find quote by id {}: {}", id, e.getMessage(), e);
+      return Optional.empty();
+    }
+  }
+
+  @Override
+  public QuoteContext findContext(String episodeId, double startSeconds, int count) {
+    try {
+      Query episodeFilter = Query.of(q -> q.term(t -> t.field("episodeId").value(episodeId)));
+
+      var beforeResp =
+          esClient.search(
+              s ->
+                  s.index(INDEX)
+                      .size(count)
+                      .sort(so -> so.field(f -> f.field("startSeconds").order(SortOrder.Desc)))
+                      .query(
+                          q ->
+                              q.bool(
+                                  b ->
+                                      b.filter(episodeFilter)
+                                          .filter(
+                                              f ->
+                                                  f.range(
+                                                      r ->
+                                                          r.number(
+                                                              n ->
+                                                                  n.field("startSeconds")
+                                                                      .lt(startSeconds)))))),
+              QuoteDocument.class);
+
+      var afterResp =
+          esClient.search(
+              s ->
+                  s.index(INDEX)
+                      .size(count)
+                      .sort(so -> so.field(f -> f.field("startSeconds").order(SortOrder.Asc)))
+                      .query(
+                          q ->
+                              q.bool(
+                                  b ->
+                                      b.filter(episodeFilter)
+                                          .filter(
+                                              f ->
+                                                  f.range(
+                                                      r ->
+                                                          r.number(
+                                                              n ->
+                                                                  n.field("startSeconds")
+                                                                      .gt(startSeconds)))))),
+              QuoteDocument.class);
+
+      // before is returned DESC; reverse to chronological order
+      List<String> before = new ArrayList<>();
+      beforeResp.hits().hits().forEach(h -> before.add(0, h.source().getText()));
+
+      List<String> after = afterResp.hits().hits().stream().map(h -> h.source().getText()).toList();
+
+      return new QuoteContext(before, after);
+    } catch (IOException e) {
+      log.error("Failed to find context for episodeId {}: {}", episodeId, e.getMessage(), e);
+      return new QuoteContext(List.of(), List.of());
     }
   }
 

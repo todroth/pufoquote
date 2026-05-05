@@ -36,7 +36,7 @@ body {
 }
 
 .header-title {
-  font-size: 0.6rem;
+  font-size: 0.8rem;
   font-weight: 600;
   letter-spacing: 0.35em;
   text-transform: uppercase;
@@ -97,6 +97,11 @@ body {
   line-height: 1.7;
   color: #111;
   margin-bottom: 1.5rem;
+  cursor: default;
+}
+
+.quote-text:hover::before {
+  color: #999;
 }
 
 .quote-text::before {
@@ -110,6 +115,7 @@ body {
   vertical-align: -0.4em;
   margin-right: 0.08em;
   color: #ccc;
+  transition: color 0.2s;
 }
 
 .quote-divider {
@@ -137,6 +143,84 @@ body {
 }
 
 .quote-meta a:hover { color: #333; }
+
+/* ── Context ── */
+#context-before {
+  margin-bottom: 1.25rem;
+}
+
+#context-after {
+  margin-top: 1rem;
+}
+
+.context-sentence {
+  font-size: 1rem;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.7;
+  color: #c0c0c0;
+  margin-bottom: 0.5rem;
+}
+
+.context-sentence:last-child {
+  margin-bottom: 0;
+}
+
+#context-before .context-sentence::before {
+  content: '[…] ';
+  font-style: normal;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: #d8d8d8;
+}
+
+#context-after .context-sentence::after {
+  content: ' […]';
+  font-style: normal;
+  font-size: 0.7rem;
+  letter-spacing: 0.03em;
+  color: #d8d8d8;
+}
+
+.context-toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #bbb;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #ddd;
+  transition: color 0.15s;
+}
+
+.context-toggle:hover {
+  color: #555;
+}
+
+.context-toggle.active {
+  color: #888;
+}
+
+/* ── Share button ── */
+.share-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #bbb;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.share-btn:hover { color: #555; }
+
+.share-btn.copied { color: #111; }
 
 /* ── Empty state ── */
 .empty {

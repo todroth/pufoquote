@@ -4,11 +4,15 @@ import lombok.RequiredArgsConstructor;
 import net.droth.pufoquote.adapter.in.web.dto.QuoteViewModel;
 import net.droth.pufoquote.domain.model.Category;
 import net.droth.pufoquote.domain.model.Quote;
+import net.droth.pufoquote.domain.model.QuoteContext;
+import net.droth.pufoquote.domain.port.in.GetQuoteByIdUseCase;
+import net.droth.pufoquote.domain.port.in.GetQuoteContextUseCase;
 import net.droth.pufoquote.domain.port.in.GetRandomQuoteUseCase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -18,6 +22,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class QuoteController {
 
   private final GetRandomQuoteUseCase getRandomQuoteUseCase;
+  private final GetQuoteByIdUseCase getQuoteByIdUseCase;
+  private final GetQuoteContextUseCase getQuoteContextUseCase;
 
   @GetMapping("/")
   public String index(
@@ -32,6 +38,27 @@ public class QuoteController {
     return "index";
   }
 
+  @GetMapping("/quote/{id}")
+  public String quoteById(@PathVariable String id, Model model) {
+    getQuoteByIdUseCase
+        .getById(id)
+        .map(this::toViewModel)
+        .ifPresent(vm -> model.addAttribute("quote", vm));
+    model.addAttribute("categories", Category.uiValues());
+    model.addAttribute("currentCategory", Category.RANDOM);
+    return "index";
+  }
+
+  @GetMapping(value = "/api/quote/{id}")
+  @ResponseBody
+  public ResponseEntity<QuoteViewModel> apiQuoteById(@PathVariable String id) {
+    return getQuoteByIdUseCase
+        .getById(id)
+        .map(this::toViewModel)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
+  }
+
   @GetMapping(value = "/api/quote")
   @ResponseBody
   public ResponseEntity<QuoteViewModel> apiQuote(
@@ -44,8 +71,18 @@ public class QuoteController {
         .orElse(ResponseEntity.noContent().build());
   }
 
+  @GetMapping(value = "/api/quote/{id}/context")
+  @ResponseBody
+  public ResponseEntity<QuoteContext> apiContext(@PathVariable String id) {
+    return getQuoteContextUseCase
+        .getContext(id)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
+  }
+
   private QuoteViewModel toViewModel(Quote quote) {
     return new QuoteViewModel(
+        quote.id(),
         quote.text(),
         quote.episodeName(),
         quote.episodeDate(),

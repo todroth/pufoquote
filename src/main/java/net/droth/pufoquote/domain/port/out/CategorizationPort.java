@@ -10,5 +10,13 @@ public interface CategorizationPort {
    * each sentence in the same order as the input. Never returns null; uses NONE/score=1 for
    * failures.
    */
-  List<Classification> classify(List<String> sentences);
+  /**
+   * @param sentences the sentences to rate
+   * @param contextBefore sentences immediately before this batch (shown to the model for context,
+   *     not rated)
+   * @param contextAfter sentences immediately after this batch (shown to the model for context, not
+   *     rated)
+   */
+  List<Classification> classify(
+      List<String> sentences, List<String> contextBefore, List<String> contextAfter);
 }

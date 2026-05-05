@@ -36,6 +36,7 @@ import org.springframework.stereotype.Service;
 public class IndexEpisodesService implements IndexEpisodesUseCase {
 
   private static final int CATEGORIZATION_BATCH_SIZE = 30;
+  private static final int CONTEXT_WINDOW = 2;
 
   private final AtomicBoolean indexingInProgress = new AtomicBoolean(false);
 
@@ -132,16 +133,26 @@ public class IndexEpisodesService implements IndexEpisodesUseCase {
           sentences.subList(i, Math.min(i + CATEGORIZATION_BATCH_SIZE, sentences.size()));
 
       List<String> texts = batch.stream().map(SentenceWithTimestamp::text).toList();
-      List<Classification> classifications = categorizationPort.classify(texts);
+      List<String> ctxBefore =
+          sentences.subList(Math.max(0, i - CONTEXT_WINDOW), i).stream()
+              .map(SentenceWithTimestamp::text)
+              .toList();
+      List<String> ctxAfter =
+          sentences
+              .subList(
+                  Math.min(i + CATEGORIZATION_BATCH_SIZE, sentences.size()),
+                  Math.min(i + CATEGORIZATION_BATCH_SIZE + CONTEXT_WINDOW, sentences.size()))
+              .stream()
+              .map(SentenceWithTimestamp::text)
+              .toList();
+      List<Classification> classifications =
+          categorizationPort.classify(texts, ctxBefore, ctxAfter);
 
       for (int j = 0; j < batch.size(); j++) {
         Classification classification =
             j < classifications.size()
                 ? classifications.get(j)
                 : new Classification(Category.NONE, 1);
-        if (classification.category() == Category.NONE) {
-          continue;
-        }
         SentenceWithTimestamp sentence = batch.get(j);
         int wordCount = sentence.text().trim().split("\\s+").length;
         quotes.add(

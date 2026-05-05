@@ -66,26 +66,39 @@ public class GroqCategorizationAdapter implements CategorizationPort {
   private final ObjectMapper objectMapper;
 
   @Override
-  public List<Classification> classify(List<String> sentences) {
+  public List<Classification> classify(
+      List<String> sentences, List<String> contextBefore, List<String> contextAfter) {
     if (sentences.isEmpty()) {
       return List.of();
     }
 
-    String prompt = buildPrompt(sentences);
+    String prompt = buildPrompt(sentences, contextBefore, contextAfter);
     String responseContent = callGroq(prompt, sentences.size());
     return parseClassifications(responseContent, sentences.size());
   }
 
-  private String buildPrompt(List<String> sentences) {
+  private String buildPrompt(
+      List<String> sentences, List<String> contextBefore, List<String> contextAfter) {
     int n = sentences.size();
     StringBuilder sb = new StringBuilder();
     sb.append("You receive ").append(n).append(" German sentences from a podcast transcript.");
     sb.append(PROMPT_BODY);
+    if (!contextBefore.isEmpty() || !contextAfter.isEmpty()) {
+      sb.append(
+          "Sentences marked [CONTEXT] are shown for context only — do NOT output a label for"
+              + " them.\n\n");
+    }
     sb.append("Output ONLY a JSON array of ")
         .append(n)
         .append(" strings like [\"funny:4\",\"none:1\",...]. No other text.\n\n");
+    for (String s : contextBefore) {
+      sb.append("[CONTEXT]  ").append(s).append('\n');
+    }
     for (int i = 0; i < n; i++) {
-      sb.append(i + 1).append(". ").append(sentences.get(i)).append('\n');
+      sb.append(i + 1).append(".  ").append(sentences.get(i)).append('\n');
+    }
+    for (String s : contextAfter) {
+      sb.append("[CONTEXT]  ").append(s).append('\n');
     }
     return sb.toString();
   }
