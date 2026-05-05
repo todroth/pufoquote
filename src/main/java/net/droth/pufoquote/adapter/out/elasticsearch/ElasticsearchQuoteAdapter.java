@@ -1,7 +1,6 @@
 package net.droth.pufoquote.adapter.out.elasticsearch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
-import co.elastic.clients.elasticsearch._types.query_dsl.FieldValueFactorModifier;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import java.io.IOException;
 import java.util.List;
@@ -63,18 +62,17 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
                               q.functionScore(
                                   fs ->
                                       fs.query(filterQuery)
-                                          // random_score provides variety
                                           .functions(f -> f.randomScore(r -> r))
-                                          // qualityScore weights higher-scoring quotes more often
+                                          // score-5 quotes get 100× weight so they dominate
                                           .functions(
                                               f ->
-                                                  f.fieldValueFactor(
-                                                      fvf ->
-                                                          fvf.field("qualityScore")
-                                                              .factor(1.0)
-                                                              .modifier(
-                                                                  FieldValueFactorModifier.None)
-                                                              .missing(3.0)))
+                                                  f.filter(
+                                                          fq ->
+                                                              fq.term(
+                                                                  t ->
+                                                                      t.field("qualityScore")
+                                                                          .value(5L)))
+                                                      .weight(100.0))
                                           .scoreMode(
                                               co.elastic.clients.elasticsearch._types.query_dsl
                                                   .FunctionScoreMode.Multiply))),
