@@ -69,6 +69,7 @@
     ep.textContent = q.episodeName || '';
     ep.href = q.episodeUrl || '#';
 
+    document.getElementById('quote-date').textContent = q.episodeDate || '';
     document.getElementById('quote-timestamp').textContent = q.timestamp ? '~' + q.timestamp : '';
 
     resetContext();
