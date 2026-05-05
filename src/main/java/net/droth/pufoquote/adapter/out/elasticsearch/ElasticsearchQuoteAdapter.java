@@ -2,11 +2,14 @@ package net.droth.pufoquote.adapter.out.elasticsearch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.droth.pufoquote.domain.model.Category;
@@ -23,6 +26,9 @@ import org.springframework.stereotype.Component;
 class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
 
   private static final String INDEX = "quotes";
+  // Categories with fewer than 100 score-5 quotes get a 75/25 split; others get 90/10
+  private static final Set<Category> LOW_STOCK_CATEGORIES =
+      Set.of(Category.INTERESTING, Category.META, Category.SERIOUS);
 
   private final QuoteEsRepository esRepository;
   private final ElasticsearchClient esClient;
@@ -53,8 +59,10 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
 
   @Override
   public Optional<Quote> findRandom(Category category) {
+    boolean lowStock = LOW_STOCK_CATEGORIES.contains(category);
+    boolean pickScore5 = ThreadLocalRandom.current().nextDouble() < (lowStock ? 0.75 : 0.90);
     try {
-      Query filterQuery = buildQuery(category);
+      Query filterQuery = buildQuery(category, pickScore5);
       var response =
           esClient.search(
               s ->
@@ -66,21 +74,8 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
                                   fs ->
                                       fs.query(filterQuery)
                                           .functions(f -> f.randomScore(r -> r))
-                                          // score-5 quotes get 100× weight so they dominate
-                                          .functions(
-                                              f ->
-                                                  f.filter(
-                                                          fq ->
-                                                              fq.term(
-                                                                  t ->
-                                                                      t.field("qualityScore")
-                                                                          .value(5L)))
-                                                      .weight(100.0))
-                                          .scoreMode(
-                                              co.elastic.clients.elasticsearch._types.query_dsl
-                                                  .FunctionScoreMode.Multiply))),
+                                          .scoreMode(FunctionScoreMode.Multiply))),
               QuoteDocument.class);
-
       return response.hits().hits().stream().findFirst().map(hit -> toDomain(hit.source()));
     } catch (IOException e) {
       log.error("Failed to find random quote: {}", e.getMessage(), e);
@@ -159,13 +154,20 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
     }
   }
 
-  private Query buildQuery(Category category) {
+  private Query buildQuery(Category category, boolean score5Only) {
     Query scoreFilter =
-        Query.of(
-            q ->
-                q.range(r -> r.number(n -> n.field("qualityScore").gte((double) minQualityScore))));
+        score5Only
+            ? Query.of(q -> q.term(t -> t.field("qualityScore").value(5L)))
+            : Query.of(
+                q ->
+                    q.range(
+                        r ->
+                            r.number(
+                                n ->
+                                    n.field("qualityScore")
+                                        .gte((double) minQualityScore)
+                                        .lt(5.0))));
     if (category == null || category == Category.RANDOM) {
-      // must:matchAll gives score 1.0 so function_score multiply works
       return Query.of(q -> q.bool(b -> b.must(m -> m.matchAll(ma -> ma)).filter(scoreFilter)));
     }
     Query categoryFilter =
