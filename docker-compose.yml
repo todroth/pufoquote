@@ -26,7 +26,7 @@ services:
       - ELASTICSEARCH_URI=http://elasticsearch:9200
       - GROQ_API_KEY=${GROQ_API_KEY}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
-      - PODCAST_FEED_URL=${PODCAST_FEED_URL:-https://feeds.acast.com/public/shows/das-podcast-ufo}
+      - PODCAST_FEED_URL=${PODCAST_FEED_URL:-https://feeds.acast.com/public/shows/0301869f-de1f-4fac-97f9-ed5bf6faab23}
       - TRANSCRIPTION_CACHE_DIR=/data/transcriptions
       - THYMELEAF_CACHE=${THYMELEAF_CACHE:-false}
     volumes:
