@@ -20,7 +20,6 @@
       e.preventDefault();
       setActiveCategory(category);
       loadQuote(category);
-      history.pushState({category: category}, '', '/?category=' + encodeURIComponent(category));
     });
   });
 
@@ -28,7 +27,6 @@
     nextBtn.addEventListener('click', function (e) {
       e.preventDefault();
       const category = nextBtn.dataset.category || 'RANDOM';
-      history.pushState({category: category}, '', '/?category=' + encodeURIComponent(category));
       loadQuote(category);
     });
   }
@@ -38,7 +36,9 @@
       const res = await fetch('/api/quote?category=' + encodeURIComponent(category));
       if (res.status === 204) { showEmpty(); return; }
       if (!res.ok) throw new Error();
-      renderQuote(await res.json());
+      const q = await res.json();
+      renderQuote(q);
+      if (q.id) history.replaceState({quoteId: q.id, category: category}, '', '/quote/' + q.id);
     } catch (_) {
       window.location.href = '/?category=' + encodeURIComponent(category);
     }
@@ -211,6 +211,7 @@
   // keep JS navigation in sync with browser back/forward
   window.addEventListener('popstate', function (e) {
     if (e.state && e.state.quoteId) {
+      if (e.state.category) setActiveCategory(e.state.category);
       loadQuoteById(e.state.quoteId);
       return;
     }
