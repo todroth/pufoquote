@@ -1,6 +1,16 @@
 (function () {
-  const nextBtn = document.getElementById('next-btn');
-  const catBtns = document.querySelectorAll('.cat-btn');
+  const nextBtn  = document.getElementById('next-btn');
+  const homeLink = document.getElementById('home-link');
+  const catBtns  = document.querySelectorAll('.cat-btn');
+
+  if (homeLink) {
+    homeLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      setActiveCategory('RANDOM');
+      loadQuote('RANDOM');
+      history.pushState({category: 'RANDOM'}, '', '/');
+    });
+  }
 
   catBtns.forEach(function (btn) {
     btn.addEventListener('click', function (e) {

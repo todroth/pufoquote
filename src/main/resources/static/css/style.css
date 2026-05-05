@@ -17,6 +17,17 @@ body {
   text-align: center;
 }
 
+.header-link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.header-link:hover { opacity: 0.6; }
+
 .header-emoji {
   font-size: 1.75rem;
   display: block;
