@@ -8,6 +8,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-top: 3px solid #111;
 }
 
 /* ── Header ── */
@@ -28,7 +29,7 @@ body {
   font-weight: 600;
   letter-spacing: 0.35em;
   text-transform: uppercase;
-  color: #bbb;
+  color: #888;
 }
 
 /* ── Categories ── */
@@ -37,11 +38,13 @@ body {
   flex-wrap: nowrap;
   justify-content: center;
   gap: 0.4rem;
-  padding: 0 2rem 3.5rem;
-  max-width: 100%;
+  width: 100%;
+  padding: 0 2rem 1.5rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 3rem;
 }
 
 .categories::-webkit-scrollbar { display: none; }
@@ -53,8 +56,8 @@ body {
   text-transform: uppercase;
   padding: 0.4rem 1.1rem;
   border-radius: 100px;
-  border: 1px solid #e0e0e0;
-  color: #aaa;
+  border: 1px solid #ddd;
+  color: #666;
   text-decoration: none;
   transition: border-color 0.15s, color 0.15s;
   white-space: nowrap;
@@ -62,13 +65,14 @@ body {
 }
 
 .cat-btn:hover {
-  border-color: #aaa;
-  color: #444;
+  border-color: #999;
+  color: #222;
 }
 
 .cat-btn.active {
   border-color: #111;
   color: #111;
+  font-weight: 600;
 }
 
 /* ── Quote ── */
@@ -98,7 +102,7 @@ body {
 .quote-meta {
   font-size: 0.75rem;
   font-weight: 400;
-  color: #bbb;
+  color: #888;
   letter-spacing: 0.02em;
   display: flex;
   align-items: center;
@@ -106,12 +110,12 @@ body {
 }
 
 .quote-meta a {
-  color: #bbb;
+  color: #888;
   text-decoration: none;
   transition: color 0.15s;
 }
 
-.quote-meta a:hover { color: #555; }
+.quote-meta a:hover { color: #333; }
 
 /* ── Empty state ── */
 .empty {
