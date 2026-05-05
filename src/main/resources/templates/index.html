@@ -40,7 +40,7 @@
       <div class="quote-meta">
         <a id="quote-episode" th:href="${quote.episodeUrl}" target="_blank" th:text="${quote.episodeName}"></a>
         <span class="meta-dot">·</span>
-        <span id="quote-timestamp" th:text="${quote.timestamp}"></span>
+        <span id="quote-timestamp">~<span th:text="${quote.timestamp}"></span></span>
         <span class="meta-dot">·</span>
         <button id="context-btn" class="context-toggle" type="button">Kontext</button>
         <span class="meta-dot">·</span>
