@@ -1,6 +1,7 @@
 services:
   elasticsearch:
     image: elasticsearch:9.3.4
+    restart: unless-stopped
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -18,6 +19,7 @@ services:
   app:
     build: .
     image: ghcr.io/todroth/pufoquote:latest
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
@@ -35,6 +37,7 @@ services:
 
   caddy:
     image: caddy:2-alpine
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
