@@ -13,14 +13,14 @@ body {
 
 /* ── Header ── */
 .header {
-  padding: 3.5rem 1.5rem 2.5rem;
+  padding: 2rem 1.25rem 1.5rem;
   text-align: center;
 }
 
 .header-emoji {
-  font-size: 2rem;
+  font-size: 1.75rem;
   display: block;
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.5rem;
   line-height: 1;
 }
 
@@ -36,15 +36,15 @@ body {
 .categories {
   display: flex;
   flex-wrap: nowrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.4rem;
   width: 100%;
-  padding: 0 2rem 1.5rem;
+  padding: 0 1.25rem 1.25rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   border-bottom: 1px solid #f0f0f0;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .categories::-webkit-scrollbar { display: none; }
@@ -54,7 +54,7 @@ body {
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 0.4rem 1.1rem;
+  padding: 0.4rem 1rem;
   border-radius: 100px;
   border: 1px solid #ddd;
   color: #666;
@@ -80,23 +80,23 @@ body {
   flex: 1;
   width: 100%;
   max-width: 680px;
-  padding: 0 2rem 9rem;
+  padding: 0 1.25rem 7rem;
 }
 
 .quote-text {
-  font-size: 1.55rem;
+  font-size: 1.2rem;
   font-weight: 300;
   font-style: italic;
   line-height: 1.7;
   color: #111;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.5rem;
 }
 
 .quote-divider {
   width: 2rem;
   height: 1px;
   background: #e8e8e8;
-  margin-bottom: 1rem;
+  margin-bottom: 0.875rem;
 }
 
 .quote-meta {
@@ -106,6 +106,7 @@ body {
   letter-spacing: 0.02em;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
@@ -129,15 +130,16 @@ body {
 /* ── Next button ── */
 .next-btn {
   position: fixed;
-  bottom: 2.5rem;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 1.5rem;
+  left: 1.25rem;
+  right: 1.25rem;
+  text-align: center;
   font-family: inherit;
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-  padding: 0.8rem 2.75rem;
+  padding: 0.9rem 1rem;
   border-radius: 100px;
   background: #111;
   color: #fff;
@@ -150,4 +152,62 @@ body {
 .next-btn:hover {
   opacity: 0.8;
   color: #fff;
+}
+
+/* ── Tablet 640px+ ── */
+@media (min-width: 640px) {
+  .header {
+    padding: 2.5rem 1.5rem 2rem;
+  }
+
+  .header-emoji {
+    font-size: 2rem;
+  }
+
+  .categories {
+    justify-content: center;
+    padding: 0 1.5rem 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .quote-area {
+    padding: 0 1.5rem 8rem;
+  }
+
+  .quote-text {
+    font-size: 1.4rem;
+  }
+
+  .next-btn {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    padding: 0.8rem 2.75rem;
+    bottom: 2rem;
+  }
+}
+
+/* ── Desktop 1024px+ ── */
+@media (min-width: 1024px) {
+  .header {
+    padding: 3.5rem 1.5rem 2.5rem;
+  }
+
+  .categories {
+    padding: 0 2rem 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .quote-area {
+    padding: 0 2rem 9rem;
+  }
+
+  .quote-text {
+    font-size: 1.55rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .next-btn {
+    bottom: 2.5rem;
+  }
 }
