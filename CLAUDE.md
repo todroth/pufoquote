@@ -92,7 +92,7 @@ docker compose up elasticsearch redis -d
 ### Docker details
 
 - **Elasticsearch**: `elasticsearch:9.3.4`, single-node, security disabled, 512m heap, data persisted in `es_data` volume
-- **Redis**: `redis:7-alpine`, data persisted in `redis_data` volume, port 6379 exposed to host (for local dev)
+- **Redis**: `redis:8-alpine`, data persisted in `redis_data` volume, port 6379 exposed to host (for local dev)
 - **App image**: `eclipse-temurin:25-jre-alpine` + `ffmpeg`, exposes port 8080
 - App waits for Elasticsearch and Redis healthchecks before starting (`depends_on: condition: service_healthy`)
 
