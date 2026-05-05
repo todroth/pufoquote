@@ -1,6 +1,6 @@
 # pufoquote — Claude Code Guide
 
-Random quote generator for *DAS PODCAST UFO*. Spring Boot + Elasticsearch backend, Thymeleaf frontend. Transcribes new podcast episodes automatically and serves categorized quotes.
+Random quote generator for *DAS PODCAST UFO*. Spring Boot + Elasticsearch backend, Thymeleaf + vanilla JS frontend. Transcribes new podcast episodes automatically, scores sentences with an LLM, and serves categorized quotes.
 
 ---
 
@@ -46,13 +46,13 @@ App starts at http://localhost:8080
 
 ### Apply resource changes during spring-boot:run
 
-Template and other resource changes are NOT live automatically. Copy them to `target/` with:
+Template, CSS, and JS changes are NOT live automatically. Copy them to `target/` with:
 
 ```bash
 "/Applications/IntelliJ IDEA.app/Contents/plugins/maven/lib/maven3/bin/mvn" resources:resources
 ```
 
-Then refresh the browser — no restart needed.
+Then refresh the browser — no restart needed. Java changes require a full restart.
 
 ### Code quality
 
@@ -106,6 +106,7 @@ docker compose up elasticsearch -d
 | `ELASTICSEARCH_URI` | No | `http://localhost:9200` | Elasticsearch endpoint |
 | `PODCAST_FEED_URL` | No | Das Podcast UFO Acast feed | RSS feed to poll |
 | `TRANSCRIPTION_CACHE_DIR` | No | `./transcriptions` | Local dir for cached transcription JSON files |
+| `quote.min-quality-score` | No | `4` | Minimum score (1–5) for quotes served to the UI |
 
 ---
 
@@ -153,9 +154,9 @@ src/main/java/net/droth/pufoquote/
 │   │   ├── Segment.java                record: startSeconds, endSeconds, text
 │   │   ├── Quote.java                  record: id, episodeId, episodeName, episodeDate,
 │   │   │                                       episodeUrl, mp3Url, startSeconds, text,
-│   │   │                                       wordCount, categories
-│   │   ├── Category.java               enum: FUNNY, ABSURD, INTERESTING, PHILOSOPHICAL,
-│   │   │                                     DRAMATIC, SELF_AWARE, RANDOM, NONE
+│   │   │                                       wordCount, qualityScore, categories
+│   │   ├── Classification.java         record: category, qualityScore — returned by CategorizationPort
+│   │   ├── Category.java               enum: FUNNY, DRAMATIC, INTERESTING, SERIOUS, META, RANDOM, NONE
 │   │   │                               — uiValues() returns display categories (excl. NONE)
 │   │   │                               — fromString() parses safely, defaults to RANDOM
 │   │   └── SentenceWithTimestamp.java  record: text, startSeconds
@@ -164,22 +165,23 @@ src/main/java/net/droth/pufoquote/
 │   └── port/
 │       ├── in/
 │       │   ├── GetRandomQuoteUseCase.java    getRandomQuote(Category)
-│       │   └── IndexEpisodesUseCase.java     indexNewEpisodes()
+│       │   └── IndexEpisodesUseCase.java     indexNewEpisodes(), reindexAll()
 │       └── out/
-│           ├── QuoteRepositoryPort.java      saveAll, existsByEpisodeId, findRandom
+│           ├── QuoteRepositoryPort.java      saveAll, existsByEpisodeId, deleteAll, findRandom
 │           ├── FeedPort.java                 fetchEpisodes()
 │           ├── TranscriptionPort.java        transcribe(Path mp3)
 │           ├── TranscriptionCachePort.java   load(), save()
-│           └── CategorizationPort.java       classify(List<String> sentences)
+│           └── CategorizationPort.java       classify(List<String>) → List<Classification>
 ├── application/
 │   ├── GetRandomQuoteService.java      delegates to QuoteRepositoryPort
 │   └── IndexEpisodesService.java       full pipeline: fetch → transcode → split → categorize → index
+│                                       reindexAll() drops ES index then re-processes all cached episodes
 │                                       AtomicBoolean guard prevents concurrent runs
 └── adapter/
     ├── in/
     │   ├── web/
-    │   │   ├── QuoteController.java    GET / — renders index.html with random quote
-    │   │   ├── AdminController.java    POST /admin/index-all (async, HTTP Basic)
+    │   │   ├── QuoteController.java    GET / — Thymeleaf page; GET /api/quote — JSON endpoint
+    │   │   ├── AdminController.java    POST /admin/index-all, POST /admin/reindex-all (HTTP Basic)
     │   │   ├── SecurityConfig.java     HTTP Basic on /admin/**, CSRF disabled there
     │   │   └── dto/
     │   │       └── QuoteViewModel.java record: text, episodeName, episodeDate, timestamp, episodeUrl
@@ -187,7 +189,9 @@ src/main/java/net/droth/pufoquote/
     │       └── ScheduledIndexer.java   cron: 0 0 6 * * * (daily 6am UTC)
     └── out/
         ├── elasticsearch/
-        │   ├── ElasticsearchQuoteAdapter.java  QuoteRepositoryPort impl; delete-before-save + random_score query
+        │   ├── ElasticsearchQuoteAdapter.java  QuoteRepositoryPort impl; delete-before-save;
+        │   │                                   findRandom: function_score with random_score ×
+        │   │                                   weight(score=5 → 100×); min-quality-score filter
         │   ├── QuoteDocument.java              @Document(index="quotes")
         │   └── QuoteEsRepository.java          Spring Data ES interface
         ├── feed/
@@ -196,27 +200,42 @@ src/main/java/net/droth/pufoquote/
         │   ├── GroqConfig.java                 @Configuration: WebClient bean with Bearer auth
         │   ├── GroqTranscriptionAdapter.java   WebClient → Groq Whisper API (verbose_json)
         │   └── GroqCategorizationAdapter.java  WebClient → Groq chat completion (batch 30 sentences)
+        │                                       returns "label:score" strings e.g. "funny:4"
         └── filesystem/
             ├── FileSystemTranscriptionCacheAdapter.java  JSON cache; atomic write via .tmp move
             └── JacksonConfig.java                        @Configuration: ObjectMapper bean
+
+src/main/resources/
+├── templates/
+│   └── index.html          Thymeleaf template — markup only, no inline styles or scripts
+├── static/
+│   ├── css/
+│   │   └── style.css       All styles — mobile-first, Inter font, light theme
+│   └── js/
+│       └── main.js         AJAX quote loading (no page reloads); history.pushState for URL sync
+└── elasticsearch/
+    └── settings.json       German analyzer config
 ```
 
 ---
 
 ## Indexing Pipeline
 
-`IndexEpisodesService.indexNewEpisodes()`:
+`IndexEpisodesService.indexNewEpisodes()` / `reindexAll()`:
 
 1. `AtomicBoolean` guard — at most one run at a time
-2. Fetch all episodes from RSS feed (ordered newest-first)
-3. Skip episodes already in ES (`existsByEpisodeId`)
-4. Check filesystem cache for existing transcription JSON
-5. If not cached: download MP3 → compress with ffmpeg (mono 16kHz 32kbps) → call Groq Whisper → cache result
-6. `SentenceSplitter.split(segments)` → sentences with timestamps (min 6 words)
-7. Batch 30 sentences → `GroqCategorizationAdapter.classify()` — returns one category per sentence
-8. Drop sentences with category `NONE`
-9. `ElasticsearchQuoteAdapter.saveAll()` — delete existing + bulk insert (idempotent)
-10. Delete temp files
+2. `reindexAll()` first drops the entire `quotes` ES index via `deleteAll()`
+3. Fetch all episodes from RSS feed (ordered newest-first)
+4. Skip episodes already in ES when not force-reindexing
+5. Check filesystem cache for existing transcription JSON
+6. If not cached: download MP3 → compress with ffmpeg (mono 16kHz 32kbps) → call Groq Whisper → cache result
+7. `SentenceSplitter.split(segments)` → sentences with timestamps (min 6 words)
+8. Batch 30 sentences → `GroqCategorizationAdapter.classify()` → `List<Classification>` (category + score 1–5)
+9. Drop sentences with category `NONE` — keep all scored non-NONE sentences regardless of score
+10. `ElasticsearchQuoteAdapter.saveAll()` — delete existing episode quotes + bulk insert (idempotent)
+11. Delete temp files
+
+The quality score threshold (`quote.min-quality-score`, default 4) is applied at **read time**, not index time. This means the threshold can be changed without reindexing.
 
 ffmpeg compression keeps files under Groq's 25 MB upload limit.
 
@@ -233,16 +252,38 @@ ffmpeg compression keeps files under Groq's 25 MB upload limit.
 
 ---
 
-## Categorization
+## Categorization & Scoring
 
 `GroqCategorizationAdapter` calls `https://api.groq.com/openai/v1/chat/completions`:
 
 - Model: `llama-3.1-8b-instant` (configurable via `groq.categorization-model`)
-- Batches of 30 sentences per request
-- Prompt: asks for exactly one label per sentence from: `funny, absurd, interesting, philosophical, dramatic, self_aware, none`
-- Response: JSON array of label strings, parsed and mapped to `Category` enum
-- On parse failure: defaults all sentences to `NONE`
+- Batches of 30 sentences per request, `max_tokens: 1200`
+- Response: JSON array of `"label:score"` strings, e.g. `["funny:4","none:1",...]`
+- On parse failure: defaults all sentences in the batch to `NONE/1`
 - Strips markdown code fences if the model wraps its JSON output
+
+**Categories** (5 content labels + none):
+
+| Label | Meaning |
+|---|---|
+| `funny` | Makes you laugh: joke, funny observation, amusing wordplay, or amusingly bizarre statement |
+| `dramatic` | Hilariously over-the-top about something trivial; maximum drama, minimum stakes |
+| `interesting` | Makes you think or want to repeat it: surprising fact, unexpected insight |
+| `serious` | A genuinely sincere or unexpectedly real moment in an otherwise silly podcast |
+| `meta` | Hosts specifically commenting on their own podcast format, habits, or listener relationship |
+| `none` | Everything else — also used for garbled/mis-transcribed German |
+
+**Scores** (1–5):
+
+| Score | Meaning |
+|---|---|
+| 1 | Garbled, mis-transcribed, or meaningless |
+| 2 | Understandable but unremarkable |
+| 3 | Decent standalone quote |
+| 4 | Memorable — would make someone smile, think, or feel something |
+| 5 | Exceptional — would make someone want to listen to the episode |
+
+Prompt enforces: at most 2–3 non-none sentences per batch of 30; non-none must score ≥ 3.
 
 ---
 
@@ -262,9 +303,43 @@ ffmpeg compression keeps files under Groq's 25 MB upload limit.
 | `startSeconds` | Double | Sentence start time |
 | `text` | Text | Sentence text, German analyzer |
 | `wordCount` | Integer | Word count |
+| `qualityScore` | Integer | LLM score 1–5 |
 | `categories` | Keyword[] | e.g. `["funny"]` (lowercase enum name) |
 
-Random quote query: `function_score` with `random_score` + optional `term` filter on `categories`.
+**Random quote query**: `function_score` with `must:matchAll` base (score 1.0) + `random_score` + weight filter (`qualityScore=5 → weight 100`). Score-5 quotes appear ~90% of the time vs score-4. Filtered by `qualityScore >= quote.min-quality-score` and optionally by category term.
+
+---
+
+## Frontend
+
+**`templates/index.html`** — markup and Thymeleaf expressions only, no inline styles or scripts.
+
+**`static/css/style.css`** — all styles:
+- Light theme (white background, `#111` text)
+- Inter font (Google Fonts)
+- Mobile-first with tablet (640px+) and desktop (1024px+) breakpoints
+- 3px black top border as editorial anchor
+- Responsive category pills (wrap on narrow screens)
+- Large Georgia italic `"` quotation mark via CSS `::before`
+- Fixed "Nächstes Zitat" button (full-width on mobile, centered pill on wider screens)
+
+**`static/js/main.js`** — AJAX navigation:
+- Intercepts clicks on category buttons, "Nächstes Zitat", and the header link
+- Fetches new quote from `GET /api/quote?category=X` without page reload
+- Updates DOM in place — no cursor reset, no page flicker
+- `history.pushState` keeps URL in sync; `popstate` handles browser back/forward
+- Falls back to full navigation if the API call fails
+
+---
+
+## API Endpoints
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/` | — | Thymeleaf page with random quote |
+| `GET` | `/api/quote?category=X` | — | JSON quote for AJAX navigation |
+| `POST` | `/admin/index-all` | HTTP Basic | Index new episodes (skips already-indexed) |
+| `POST` | `/admin/reindex-all` | HTTP Basic | Drop all quotes and re-index everything from cache |
 
 ---
 
@@ -273,7 +348,7 @@ Random quote query: `function_score` with `random_score` + optional `term` filte
 | API | Endpoint | Model | Purpose |
 |---|---|---|---|
 | Whisper transcription | `/openai/v1/audio/transcriptions` | `whisper-large-v3-turbo` | MP3 → segments |
-| Chat completion | `/openai/v1/chat/completions` | `llama-3.1-8b-instant` | sentence → category |
+| Chat completion | `/openai/v1/chat/completions` | `llama-3.1-8b-instant` | sentence → category + score |
 
 ---
 
@@ -283,41 +358,28 @@ Episode IDs come from the RSS `<guid>` element. Older episodes use WordPress URL
 
 ---
 
-## Frontend
-
-Single Thymeleaf page (`templates/index.html`):
-
-- Header always reads **DAS PODCAST UFO** (all-caps, no exceptions)
-- Category buttons: `/?category=FUNNY` — active category gets `.active` class
-- Quote card: quote text, episode name (linked to episode URL), timestamp (`HH:MM:SS` or `MM:SS`)
-- "Nächstes Zitat" button: reloads page with same `category` param — no JavaScript required
-- Styling: dark background (`#0d0d0d`), Bootstrap 5 from CDN
-
----
-
-## Admin Endpoints
-
-```
-POST /admin/index-all   — index all episodes not yet in ES (async)
-```
-
-HTTP Basic auth: username `admin`, password from `ADMIN_PASSWORD` env var.
-
----
-
 ## Common Tasks
 
 ```bash
-# Trigger full index (skips already-indexed episodes)
+# Trigger incremental index (skips already-indexed episodes)
 curl -u admin:$ADMIN_PASSWORD -X POST http://localhost:8080/admin/index-all
 
-# Check indexed quote count
+# Drop everything and re-index all 463 cached episodes
+curl -u admin:$ADMIN_PASSWORD -X POST http://localhost:8080/admin/reindex-all
+
+# Check total indexed quote count
 curl http://localhost:9200/quotes/_count
 
 # Check quotes per category
 curl -s http://localhost:9200/quotes/_search \
   -H "Content-Type: application/json" \
   -d '{"size":0,"aggs":{"by_cat":{"terms":{"field":"categories","size":20}}}}' \
+  | python3 -m json.tool
+
+# Check score distribution
+curl -s http://localhost:9200/quotes/_search \
+  -H "Content-Type: application/json" \
+  -d '{"size":0,"aggs":{"scores":{"terms":{"field":"qualityScore","size":10}}}}' \
   | python3 -m json.tool
 
 # Check Elasticsearch cluster health
