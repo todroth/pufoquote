@@ -29,24 +29,27 @@ public class GroqCategorizationAdapter implements CategorizationPort {
 
   // Each element is "label:score", e.g. "funny:4" or "none:1"
   private static final String PROMPT_BODY =
-      " Your job is to find the rare gems — sentences that are genuinely funny, surprising,"
-          + " quotable, or insightful. Be very selective: MOST sentences (>90%) should be"
-          + " labeled 'none'.\n\n"
-          + "Label (assign non-none only if the sentence truly stands out):\n"
-          + "  funny      — actually makes you laugh or smile\n"
-          + "  absurd     — genuinely bizarre or surreal\n"
-          + "  interesting — surprising fact or unexpected insight\n"
-          + "  philosophical — meaningfully reflective or thought-provoking\n"
+      " Find sentences that are genuine gems — truly funny, surprising, or quotable."
+          + " You MUST label at least 27 out of every 30 sentences as 'none'."
+          + " Assign a non-none label ONLY when a sentence would make a stranger"
+          + " laugh, think, or want to listen to the episode. When in doubt: none.\n\n"
+          + "Labels — be precise, use exactly one:\n"
+          + "  funny      — genuinely funny; makes you laugh out loud\n"
+          + "  absurd     — bizarre or surreal in a striking way\n"
+          + "  interesting — surprising fact or unexpected insight, not just mildly interesting\n"
+          + "  philosophical — meaningfully thought-provoking, not just vague reflection\n"
           + "  dramatic   — hilariously over-the-top about something trivial\n"
           + "  self_aware — clever meta-commentary about the podcast itself\n"
-          + "  none       — everything else (filler, transitions, mundane conversation,"
-          + " incomplete fragments, garbled transcription)\n\n"
-          + "Score 1-5 (be strict — most sentences score 1-2):\n"
-          + "  1 = garbled/incoherent/meaningless\n"
+          + "  none       — everything else: filler, transitions, small talk, mundane facts,"
+          + " incomplete thoughts, garbled transcription\n\n"
+          + "Score 1-5 — be strict:\n"
+          + "  1 = garbled, incoherent, or meaningless\n"
           + "  2 = boring or unremarkable\n"
-          + "  3 = genuinely worth reading as a standalone quote\n"
-          + "  4 = memorable, would make someone smile or think\n"
-          + "  5 = exceptional — would make someone want to listen to the episode\n\n";
+          + "  3 = decent standalone quote\n"
+          + "  4 = memorable — would make someone smile or think\n"
+          + "  5 = exceptional — would make someone want to listen to the episode\n\n"
+          + "RULE: If a sentence gets a non-none label it must score at least 3."
+          + " Most non-none sentences should score 3-4; score 5 is rare.\n\n";
 
   @Value("${groq.categorization-model:llama-3.1-8b-instant}")
   private final String model;

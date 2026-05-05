@@ -1,0 +1,9 @@
+{
+  "analysis": {
+    "analyzer": {
+      "german": {
+        "type": "german"
+      }
+    }
+  }
+}
