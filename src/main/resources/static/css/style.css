@@ -2,8 +2,8 @@
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background: #0c0c0c;
-  color: #e8e8e8;
+  background: #fff;
+  color: #111;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -17,52 +17,58 @@ body {
 }
 
 .header-emoji {
-  font-size: 2.25rem;
+  font-size: 2rem;
   display: block;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.65rem;
   line-height: 1;
 }
 
 .header-title {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.35em;
   text-transform: uppercase;
-  color: #555;
+  color: #bbb;
 }
 
 /* ── Categories ── */
 .categories {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 0.45rem;
-  padding: 0 1.5rem 3.5rem;
-  max-width: 720px;
+  gap: 0.4rem;
+  padding: 0 2rem 3.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
+.categories::-webkit-scrollbar { display: none; }
+
 .cat-btn {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 0.38rem 1rem;
+  padding: 0.4rem 1.1rem;
   border-radius: 100px;
-  border: 1px solid #252525;
-  color: #555;
+  border: 1px solid #e0e0e0;
+  color: #aaa;
   text-decoration: none;
   transition: border-color 0.15s, color 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .cat-btn:hover {
-  border-color: #444;
-  color: #aaa;
+  border-color: #aaa;
+  color: #444;
 }
 
 .cat-btn.active {
-  border-color: #e8e8e8;
-  color: #e8e8e8;
+  border-color: #111;
+  color: #111;
 }
 
 /* ── Quote ── */
@@ -78,43 +84,39 @@ body {
   font-weight: 300;
   font-style: italic;
   line-height: 1.7;
-  color: #e8e8e8;
+  color: #111;
   margin-bottom: 1.75rem;
 }
 
 .quote-divider {
   width: 2rem;
   height: 1px;
-  background: #2a2a2a;
+  background: #e8e8e8;
   margin-bottom: 1rem;
 }
 
 .quote-meta {
   font-size: 0.75rem;
   font-weight: 400;
-  color: #3d3d3d;
+  color: #bbb;
   letter-spacing: 0.02em;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .quote-meta a {
-  color: #3d3d3d;
+  color: #bbb;
   text-decoration: none;
   transition: color 0.15s;
 }
 
-.quote-meta a:hover { color: #888; }
-
-.meta-dot {
-  color: #2a2a2a;
-}
+.quote-meta a:hover { color: #555; }
 
 /* ── Empty state ── */
 .empty {
   text-align: center;
-  color: #2a2a2a;
+  color: #ccc;
   font-size: 0.85rem;
   letter-spacing: 0.05em;
   padding: 4rem 0;
@@ -127,21 +129,21 @@ body {
   left: 50%;
   transform: translateX(-50%);
   font-family: inherit;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
   padding: 0.8rem 2.75rem;
   border-radius: 100px;
-  background: #e8e8e8;
-  color: #0c0c0c;
+  background: #111;
+  color: #fff;
   text-decoration: none;
   white-space: nowrap;
   transition: opacity 0.15s;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.12);
 }
 
 .next-btn:hover {
-  opacity: 0.88;
-  color: #0c0c0c;
+  opacity: 0.8;
+  color: #fff;
 }
