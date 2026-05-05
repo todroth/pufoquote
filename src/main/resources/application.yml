@@ -8,7 +8,7 @@ spring:
       name: admin
       password: ${ADMIN_PASSWORD}
   thymeleaf:
-    cache: false
+    cache: ${THYMELEAF_CACHE:false}
 
 groq:
   api-key: ${GROQ_API_KEY}

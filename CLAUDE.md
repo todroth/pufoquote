@@ -122,10 +122,12 @@ Hexagonal architecture (Ports & Adapters). The domain has zero framework depende
                │ calls
 ┌──────────────▼───────────────────────────────────────────────────┐
 │                       Domain Ports (in)                          │
-│   GetRandomQuoteUseCase   IndexEpisodesUseCase                   │
+│   GetRandomQuoteUseCase   GetQuoteByIdUseCase                    │
+│   GetQuoteContextUseCase  IndexEpisodesUseCase                   │
 ├──────────────────────────────────────────────────────────────────┤
 │                     Application Services                         │
-│   GetRandomQuoteService   IndexEpisodesService                   │
+│   GetRandomQuoteService   GetQuoteByIdService                    │
+│   GetQuoteContextService  IndexEpisodesService                   │
 ├──────────────────────────────────────────────────────────────────┤
 │                       Domain Ports (out)                         │
 │   QuoteRepositoryPort   FeedPort                                 │
@@ -159,32 +161,40 @@ src/main/java/net/droth/pufoquote/
 │   │   ├── Category.java               enum: FUNNY, DRAMATIC, INTERESTING, SERIOUS, META, RANDOM, NONE
 │   │   │                               — uiValues() returns display categories (excl. NONE)
 │   │   │                               — fromString() parses safely, defaults to RANDOM
+│   │   ├── QuoteContext.java           record: before List<String>, after List<String>
 │   │   └── SentenceWithTimestamp.java  record: text, startSeconds
 │   ├── service/
 │   │   └── SentenceSplitter.java       splits Segment blocks into sentences; tracks startSeconds
 │   └── port/
 │       ├── in/
 │       │   ├── GetRandomQuoteUseCase.java    getRandomQuote(Category)
+│       │   ├── GetQuoteByIdUseCase.java      getById(String id) → Optional<Quote>
+│       │   ├── GetQuoteContextUseCase.java   getContext(String quoteId) → Optional<QuoteContext>
 │       │   └── IndexEpisodesUseCase.java     indexNewEpisodes(), reindexAll()
 │       └── out/
-│           ├── QuoteRepositoryPort.java      saveAll, existsByEpisodeId, deleteAll, findRandom
+│           ├── QuoteRepositoryPort.java      saveAll, existsByEpisodeId, deleteAll, findRandom,
+│           │                                 findById, findContext(episodeId, startSeconds, count)
 │           ├── FeedPort.java                 fetchEpisodes()
 │           ├── TranscriptionPort.java        transcribe(Path mp3)
 │           ├── TranscriptionCachePort.java   load(), save()
 │           └── CategorizationPort.java       classify(List<String>) → List<Classification>
 ├── application/
-│   ├── GetRandomQuoteService.java      delegates to QuoteRepositoryPort
+│   ├── GetRandomQuoteService.java      delegates to QuoteRepositoryPort.findRandom
+│   ├── GetQuoteByIdService.java        delegates to QuoteRepositoryPort.findById
+│   ├── GetQuoteContextService.java     looks up quote by id, then calls findContext(episodeId, startSeconds, 2)
 │   └── IndexEpisodesService.java       full pipeline: fetch → transcode → split → categorize → index
 │                                       reindexAll() drops ES index then re-processes all cached episodes
 │                                       AtomicBoolean guard prevents concurrent runs
 └── adapter/
     ├── in/
     │   ├── web/
-    │   │   ├── QuoteController.java    GET / — Thymeleaf page; GET /api/quote — JSON endpoint
+    │   │   ├── QuoteController.java    GET /, GET /quote/{id} — Thymeleaf pages
+    │   │   │                           GET /api/quote, GET /api/quote/{id} — JSON endpoints
+    │   │   │                           GET /api/quote/{id}/context — QuoteContext JSON
     │   │   ├── AdminController.java    POST /admin/index-all, POST /admin/reindex-all (HTTP Basic)
     │   │   ├── SecurityConfig.java     HTTP Basic on /admin/**, CSRF disabled there
     │   │   └── dto/
-    │   │       └── QuoteViewModel.java record: text, episodeName, episodeDate, timestamp, episodeUrl
+    │   │       └── QuoteViewModel.java record: id, text, episodeName, episodeDate, timestamp, episodeUrl
     │   └── scheduler/
     │       └── ScheduledIndexer.java   cron: 0 0 6 * * * (daily 6am UTC)
     └── out/
@@ -323,12 +333,14 @@ Prompt enforces: at most 2–3 non-none sentences per batch of 30; non-none must
 - Large Georgia italic `"` quotation mark via CSS `::before`
 - Fixed "Nächstes Zitat" button (full-width on mobile, centered pill on wider screens)
 
-**`static/js/main.js`** — AJAX navigation:
+**`static/js/main.js`** — AJAX navigation + share + context:
 - Intercepts clicks on category buttons, "Nächstes Zitat", and the header link
 - Fetches new quote from `GET /api/quote?category=X` without page reload
 - Updates DOM in place — no cursor reset, no page flicker
-- `history.pushState` keeps URL in sync; `popstate` handles browser back/forward
+- `history.pushState` keeps URL in sync; `popstate` handles back/forward (both category and quote-id state)
 - Falls back to full navigation if the API call fails
+- **Share button**: pushes `/quote/{id}` to history and copies the URL to the clipboard (shows "copied" feedback for 1.5s)
+- **Kontext button** (also triggered by clicking the quote text): toggles `GET /api/quote/{id}/context`, shows the 2 sentences before and after the quote in the same episode; resets on each new quote load
 
 ---
 
@@ -337,7 +349,10 @@ Prompt enforces: at most 2–3 non-none sentences per batch of 30; non-none must
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/` | — | Thymeleaf page with random quote |
+| `GET` | `/quote/{id}` | — | Thymeleaf page for a specific quote (shareable link) |
 | `GET` | `/api/quote?category=X` | — | JSON quote for AJAX navigation |
+| `GET` | `/api/quote/{id}` | — | JSON for a specific quote by ID |
+| `GET` | `/api/quote/{id}/context` | — | `QuoteContext` — 2 sentences before/after in same episode |
 | `POST` | `/admin/index-all` | HTTP Basic | Index new episodes (skips already-indexed) |
 | `POST` | `/admin/reindex-all` | HTTP Basic | Drop all quotes and re-index everything from cache |
 
