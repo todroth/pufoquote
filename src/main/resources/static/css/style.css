@@ -80,12 +80,27 @@ body {
 }
 
 .quote-text {
+  position: relative;
   font-size: 1.2rem;
   font-weight: 300;
   font-style: italic;
   line-height: 1.7;
   color: #111;
   margin-bottom: 1.5rem;
+  padding-top: 2.5rem;
+}
+
+.quote-text::before {
+  content: '\201C';
+  position: absolute;
+  top: -0.15rem;
+  left: -0.1rem;
+  font-size: 6rem;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1;
+  color: #e8e8e8;
+  pointer-events: none;
 }
 
 .quote-divider {
