@@ -19,17 +19,7 @@
     </a>
   </header>
 
-  <nav class="categories">
-    <th:block th:each="cat : ${categories}">
-      <a
-        th:href="@{/(category=${cat.name()})}"
-        th:text="${cat.displayName}"
-        th:classappend="${cat == currentCategory} ? ' active' : ''"
-        th:data-category="${cat.name()}"
-        class="cat-btn">
-      </a>
-    </th:block>
-  </nav>
+  <nav th:replace="~{fragments/nav :: categories}"></nav>
 
   <main class="quote-area">
     <div id="quote-card" th:if="${quote != null}" th:data-quote-id="${quote.id}">
@@ -52,6 +42,13 @@
             <path d="M9 7a3.5 3.5 0 0 0-5 0L2 9a3.5 3.5 0 0 0 5 5L8.5 12"/>
           </svg>
         </button>
+        <span class="meta-dot">·</span>
+        <button id="like-btn" class="like-btn" type="button"
+                th:classappend="${quote.alreadyVoted()} ? ' liked' : ''"
+                th:data-already-liked="${quote.alreadyVoted()}"
+                th:data-vote-count="${quote.voteCount()}">
+          👍 <span class="like-count" th:text="${quote.voteCount()}">0</span>
+        </button>
       </div>
     </div>
 
@@ -61,6 +58,7 @@
   <footer class="site-footer">
     <a href="/impressum">Impressum</a>
   </footer>
+
 
   <a id="next-btn" th:href="@{/(category=${currentCategory.name()})}" class="next-btn"
      th:data-category="${currentCategory.name()}">

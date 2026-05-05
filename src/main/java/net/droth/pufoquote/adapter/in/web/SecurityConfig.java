@@ -17,7 +17,7 @@ public class SecurityConfig {
     return http.authorizeHttpRequests(
             auth -> auth.requestMatchers("/admin/**").authenticated().anyRequest().permitAll())
         .httpBasic(Customizer.withDefaults())
-        .csrf(csrf -> csrf.ignoringRequestMatchers("/admin/**"))
+        .csrf(csrf -> csrf.ignoringRequestMatchers("/admin/**", "/api/quote/*/vote"))
         .build();
   }
 }

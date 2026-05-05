@@ -16,6 +16,19 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   app:
     build: .
     image: ghcr.io/todroth/pufoquote:latest
@@ -24,6 +37,7 @@ services:
       - "8080:8080"
     environment:
       - ELASTICSEARCH_URI=http://elasticsearch:9200
+      - REDIS_URI=redis://redis:6379
       - GROQ_API_KEY=${GROQ_API_KEY}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-changeme}
       - PODCAST_FEED_URL=${PODCAST_FEED_URL:-https://feeds.acast.com/public/shows/0301869f-de1f-4fac-97f9-ed5bf6faab23}
@@ -33,6 +47,8 @@ services:
       - ./transcriptions:/data/transcriptions
     depends_on:
       elasticsearch:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   caddy:
@@ -53,5 +69,6 @@ services:
 
 volumes:
   es_data:
+  redis_data:
   caddy_data:
   caddy_config:

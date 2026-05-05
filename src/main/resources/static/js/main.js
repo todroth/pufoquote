@@ -15,8 +15,9 @@
 
   catBtns.forEach(function (btn) {
     btn.addEventListener('click', function (e) {
-      e.preventDefault();
       const category = btn.dataset.category;
+      if (!category) return;
+      e.preventDefault();
       setActiveCategory(category);
       loadQuote(category);
       history.pushState({category: category}, '', '/?category=' + encodeURIComponent(category));
@@ -71,6 +72,14 @@
 
     document.getElementById('quote-date').textContent = q.episodeDate || '';
     document.getElementById('quote-timestamp').textContent = q.timestamp ? '~' + q.timestamp : '';
+
+    const likeBtn = document.getElementById('like-btn');
+    if (likeBtn) {
+      likeBtn.dataset.alreadyLiked = q.alreadyVoted ? 'true' : 'false';
+      likeBtn.classList.toggle('liked', !!q.alreadyVoted);
+      const likeCount = likeBtn.querySelector('.like-count');
+      if (likeCount) likeCount.textContent = q.voteCount || 0;
+    }
 
     resetContext();
   }
@@ -176,6 +185,26 @@
           setTimeout(function () { shareBtn.classList.remove('copied'); }, 1500);
         });
       }
+    });
+  }
+
+  const likeBtn = document.getElementById('like-btn');
+  if (likeBtn) {
+    likeBtn.addEventListener('click', async function () {
+      const card = document.getElementById('quote-card');
+      const quoteId = card && card.dataset.quoteId;
+      if (!quoteId) return;
+      try {
+        const res = await fetch('/api/quote/' + encodeURIComponent(quoteId) + '/vote', {
+          method: 'POST',
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        likeBtn.dataset.alreadyLiked = data.alreadyVoted ? 'true' : 'false';
+        likeBtn.classList.toggle('liked', data.alreadyVoted);
+        const likeCount = likeBtn.querySelector('.like-count');
+        if (likeCount) likeCount.textContent = data.voteCount;
+      } catch (_) {}
     });
   }
 

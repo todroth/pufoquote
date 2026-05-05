@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+  <nav th:fragment="categories" class="categories">
+    <th:block th:each="cat : ${categories}">
+      <a
+        th:href="@{/(category=${cat.name()})}"
+        th:text="${cat.displayName}"
+        th:classappend="${cat == currentCategory} ? ' active' : ''"
+        th:data-category="${cat.name()}"
+        class="cat-btn">
+      </a>
+    </th:block>
+    <a href="/best" class="cat-btn beste-btn">Beste</a>
+  </nav>
+</body>
+</html>

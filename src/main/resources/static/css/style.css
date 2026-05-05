@@ -374,3 +374,96 @@ body {
     bottom: 2.5rem;
   }
 }
+
+/* ── Beste pill ── */
+.cat-btn.beste-btn {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.cat-btn.beste-btn:hover {
+  background: #333;
+  border-color: #333;
+  color: #fff;
+}
+
+/* ── Like button ── */
+.like-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #bbb;
+  font-family: inherit;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.like-btn:hover { color: #555; }
+
+.like-btn.liked { color: #111; }
+
+/* ── Best-of page ── */
+.best-heading {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 2rem;
+}
+
+.best-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  padding: 0;
+}
+
+.best-item-link {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  text-decoration: none;
+  color: inherit;
+}
+
+.best-rank-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #fff;
+  background: #111;
+  border-radius: 100px;
+  padding: 0.2rem 0.55rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.best-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.best-quote-text {
+  font-size: 1rem;
+  font-weight: 300;
+  font-style: italic;
+  line-height: 1.6;
+  color: #111;
+}
+
+.best-item-link:hover .best-quote-text { color: #444; }
+
+.best-meta {
+  font-size: 0.7rem;
+  color: #aaa;
+  letter-spacing: 0.02em;
+}

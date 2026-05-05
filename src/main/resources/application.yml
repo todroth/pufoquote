@@ -3,6 +3,9 @@ spring:
     name: pufoquote
   elasticsearch:
     uris: ${ELASTICSEARCH_URI:http://localhost:9200}
+  data:
+    redis:
+      url: ${REDIS_URI:redis://localhost:6379}
   security:
     user:
       name: admin
