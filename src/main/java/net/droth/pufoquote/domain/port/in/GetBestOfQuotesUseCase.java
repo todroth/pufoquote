@@ -4,5 +4,5 @@ import java.util.List;
 import net.droth.pufoquote.domain.model.BestOfQuote;
 
 public interface GetBestOfQuotesUseCase {
-  List<BestOfQuote> getTopQuotes(int limit);
+  List<BestOfQuote> getQuotes(int offset, int limit);
 }

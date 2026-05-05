@@ -17,8 +17,8 @@ public class GetBestOfService implements GetBestOfQuotesUseCase {
   private final QuoteRepositoryPort quoteRepository;
 
   @Override
-  public List<BestOfQuote> getTopQuotes(int limit) {
-    return voteRepository.getTopVotedQuoteIds(limit).stream()
+  public List<BestOfQuote> getQuotes(int offset, int limit) {
+    return voteRepository.getVotedQuoteIds(offset, limit).stream()
         .flatMap(
             id ->
                 quoteRepository

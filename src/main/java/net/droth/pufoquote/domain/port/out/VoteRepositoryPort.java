@@ -9,5 +9,5 @@ public interface VoteRepositoryPort {
 
   long getVoteCount(String quoteId);
 
-  List<String> getTopVotedQuoteIds(int limit);
+  List<String> getVotedQuoteIds(int offset, int limit);
 }

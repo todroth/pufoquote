@@ -467,3 +467,23 @@ body {
   color: #aaa;
   letter-spacing: 0.02em;
 }
+
+.load-more-btn {
+  display: block;
+  margin: 2.5rem auto 0;
+  font-family: inherit;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  padding: 0.8rem 2.5rem;
+  border-radius: 100px;
+  border: 1.5px solid #111;
+  background: none;
+  color: #111;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.load-more-btn:hover { opacity: 0.6; }
+.load-more-btn:disabled { opacity: 0.3; cursor: default; }

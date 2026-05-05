@@ -26,7 +26,7 @@
 
     <p th:if="${#lists.isEmpty(items)}" class="empty">Noch keine Stimmen abgegeben.</p>
 
-    <ol class="best-items" th:if="${not #lists.isEmpty(items)}">
+    <ol id="best-list" class="best-items" th:if="${not #lists.isEmpty(items)}">
       <li th:each="item : ${items}" class="best-item">
         <a th:href="@{/quote/{id}(id=${item.quote.id})}" class="best-item-link">
           <span class="best-rank-badge" th:text="${item.voteCount}">0</span>
@@ -38,11 +38,17 @@
         </a>
       </li>
     </ol>
+
+    <button id="load-more-btn" class="load-more-btn"
+            th:if="${items.size() >= 20}"
+            th:attr="data-offset=${items.size()}">Mehr laden</button>
   </main>
 
   <footer class="site-footer">
     <a href="/impressum">Impressum</a>
   </footer>
+
+  <script src="/js/main.js"></script>
 
 </body>
 </html>

@@ -208,6 +208,52 @@
     });
   }
 
+  // ── Best-of page: load more ──
+  const loadMoreBtn = document.getElementById('load-more-btn');
+  if (loadMoreBtn) {
+    let offset = parseInt(loadMoreBtn.dataset.offset || '20', 10);
+    loadMoreBtn.addEventListener('click', async function () {
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = '…';
+      try {
+        const res = await fetch('/api/best?offset=' + offset + '&limit=20');
+        if (!res.ok) throw new Error();
+        const items = await res.json();
+        const list = document.getElementById('best-list');
+        items.forEach(function (item) {
+          const li = document.createElement('li');
+          li.className = 'best-item';
+          li.innerHTML =
+            '<a href="/quote/' + escHtml(item.quote.id) + '" class="best-item-link">' +
+            '<span class="best-rank-badge">' + escHtml(String(item.voteCount)) + '</span>' +
+            '<div class="best-item-body">' +
+            '<p class="best-quote-text">' + escHtml(item.quote.text) + '</p>' +
+            '<span class="best-meta">' + escHtml(item.quote.episodeName) + ' · ' + escHtml(item.quote.episodeDate) + '</span>' +
+            '</div></a>';
+          list.appendChild(li);
+        });
+        offset += items.length;
+        if (items.length < 20) {
+          loadMoreBtn.style.display = 'none';
+        } else {
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.textContent = 'Mehr laden';
+        }
+      } catch (_) {
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = 'Mehr laden';
+      }
+    });
+  }
+
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
   // keep JS navigation in sync with browser back/forward
   window.addEventListener('popstate', function (e) {
     if (e.state && e.state.quoteId) {

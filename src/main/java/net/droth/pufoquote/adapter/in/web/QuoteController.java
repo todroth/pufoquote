@@ -136,13 +136,25 @@ public class QuoteController {
       @CookieValue(name = COOKIE_NAME, defaultValue = "") String votedCookie, Model model) {
     Set<String> voted = parseCookie(votedCookie);
     List<BestOfViewModel> items =
-        getBestOfQuotesUseCase.getTopQuotes(20).stream()
+        getBestOfQuotesUseCase.getQuotes(0, 20).stream()
             .map(b -> new BestOfViewModel(toViewModel(b.quote(), voted), b.voteCount()))
             .toList();
     model.addAttribute("items", items);
     model.addAttribute("categories", Category.uiValues());
     model.addAttribute("currentCategory", null);
     return "best";
+  }
+
+  @GetMapping(value = "/api/best")
+  @ResponseBody
+  public List<BestOfViewModel> apiBest(
+      @RequestParam(name = "offset", defaultValue = "0") int offset,
+      @RequestParam(name = "limit", defaultValue = "20") int limit,
+      @CookieValue(name = COOKIE_NAME, defaultValue = "") String votedCookie) {
+    Set<String> voted = parseCookie(votedCookie);
+    return getBestOfQuotesUseCase.getQuotes(offset, limit).stream()
+        .map(b -> new BestOfViewModel(toViewModel(b.quote(), voted), b.voteCount()))
+        .toList();
   }
 
   private QuoteViewModel toViewModel(Quote quote, Set<String> votedIds) {

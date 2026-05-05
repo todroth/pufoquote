@@ -35,8 +35,9 @@ class RedisVoteAdapter implements VoteRepositoryPort {
   }
 
   @Override
-  public List<String> getTopVotedQuoteIds(int limit) {
-    Set<String> result = redisTemplate.opsForZSet().reverseRange(LEADERBOARD_KEY, 0, limit - 1L);
+  public List<String> getVotedQuoteIds(int offset, int limit) {
+    Set<String> result =
+        redisTemplate.opsForZSet().reverseRange(LEADERBOARD_KEY, offset, (long) offset + limit - 1);
     return result == null ? List.of() : List.copyOf(result);
   }
 }
