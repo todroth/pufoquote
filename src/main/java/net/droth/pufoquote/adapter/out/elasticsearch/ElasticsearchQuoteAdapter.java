@@ -93,11 +93,15 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
             q ->
                 q.range(r -> r.number(n -> n.field("qualityScore").gte((double) minQualityScore))));
     if (category == null || category == Category.RANDOM) {
-      return scoreFilter;
+      // must:matchAll gives score 1.0 so function_score multiply works
+      return Query.of(q -> q.bool(b -> b.must(m -> m.matchAll(ma -> ma)).filter(scoreFilter)));
     }
     Query categoryFilter =
         Query.of(q -> q.term(t -> t.field("categories").value(category.name().toLowerCase())));
-    return Query.of(q -> q.bool(b -> b.filter(scoreFilter).filter(categoryFilter)));
+    return Query.of(
+        q ->
+            q.bool(
+                b -> b.must(m -> m.matchAll(ma -> ma)).filter(scoreFilter).filter(categoryFilter)));
   }
 
   private void deleteExisting(String episodeId) {
