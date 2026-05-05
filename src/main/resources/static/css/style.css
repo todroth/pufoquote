@@ -35,19 +35,14 @@ body {
 /* ── Categories ── */
 .categories {
   display: flex;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.4rem;
   width: 100%;
   padding: 0 1.25rem 1.25rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
   border-bottom: 1px solid #f0f0f0;
   margin-bottom: 2rem;
 }
-
-.categories::-webkit-scrollbar { display: none; }
 
 .cat-btn {
   font-size: 0.6rem;
@@ -166,7 +161,6 @@ body {
   }
 
   .categories {
-    justify-content: center;
     padding: 0 1.5rem 1.5rem;
     margin-bottom: 2.5rem;
   }
