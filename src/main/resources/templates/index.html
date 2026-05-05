@@ -23,33 +23,32 @@
         th:href="@{/(category=${cat.name()})}"
         th:text="${cat.displayName}"
         th:classappend="${cat == currentCategory} ? ' active' : ''"
+        th:data-category="${cat.name()}"
         class="cat-btn">
       </a>
     </th:block>
   </nav>
 
   <main class="quote-area">
-    <div th:if="${quote != null}">
-      <p class="quote-text" th:text="${quote.text()}"></p>
+    <div id="quote-card" th:if="${quote != null}">
+      <p id="quote-text" class="quote-text" th:text="${quote.text()}"></p>
       <div class="quote-divider"></div>
       <div class="quote-meta">
-        <th:block th:if="${quote.episodeUrl() != null and !quote.episodeUrl().isEmpty()}">
-          <a th:href="${quote.episodeUrl()}" target="_blank" th:text="${quote.episodeName()}"></a>
-        </th:block>
-        <th:block th:unless="${quote.episodeUrl() != null and !quote.episodeUrl().isEmpty()}">
-          <span th:text="${quote.episodeName()}"></span>
-        </th:block>
-        <span th:if="${quote.timestamp() != null}" class="meta-dot">·</span>
-        <span th:if="${quote.timestamp() != null}" th:text="${quote.timestamp()}"></span>
+        <a id="quote-episode" th:href="${quote.episodeUrl()}" target="_blank" th:text="${quote.episodeName()}"></a>
+        <span class="meta-dot">·</span>
+        <span id="quote-timestamp" th:text="${quote.timestamp()}"></span>
       </div>
     </div>
 
-    <p th:if="${quote == null}" class="empty">Keine Zitate in dieser Kategorie.</p>
+    <p id="quote-empty" th:if="${quote == null}" class="empty">Keine Zitate in dieser Kategorie.</p>
   </main>
 
-  <a th:href="@{/(category=${currentCategory.name()})}" class="next-btn">
+  <a id="next-btn" th:href="@{/(category=${currentCategory.name()})}" class="next-btn"
+     th:data-category="${currentCategory.name()}">
     Nächstes Zitat
   </a>
+
+  <script src="/js/main.js"></script>
 
 </body>
 </html>

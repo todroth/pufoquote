@@ -5,10 +5,12 @@ import net.droth.pufoquote.adapter.in.web.dto.QuoteViewModel;
 import net.droth.pufoquote.domain.model.Category;
 import net.droth.pufoquote.domain.model.Quote;
 import net.droth.pufoquote.domain.port.in.GetRandomQuoteUseCase;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 /** Thymeleaf controller for the main quote page. */
 @Controller
@@ -28,6 +30,18 @@ public class QuoteController {
     model.addAttribute("categories", Category.uiValues());
     model.addAttribute("currentCategory", category);
     return "index";
+  }
+
+  @GetMapping(value = "/api/quote")
+  @ResponseBody
+  public ResponseEntity<QuoteViewModel> apiQuote(
+      @RequestParam(name = "category", defaultValue = "RANDOM") String categoryParam) {
+    Category category = Category.fromString(categoryParam);
+    return getRandomQuoteUseCase
+        .getRandomQuote(category)
+        .map(this::toViewModel)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.noContent().build());
   }
 
   private QuoteViewModel toViewModel(Quote quote) {
