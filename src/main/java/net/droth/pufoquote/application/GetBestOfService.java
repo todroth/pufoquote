@@ -1,5 +1,6 @@
 package net.droth.pufoquote.application;
 
+import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import net.droth.pufoquote.domain.model.BestOfQuote;
@@ -24,6 +25,11 @@ public class GetBestOfService implements GetBestOfQuotesUseCase {
                     .findById(id)
                     .map(q -> new BestOfQuote(q, voteRepository.getVoteCount(id)))
                     .stream())
+        .sorted(
+            Comparator.comparingLong(BestOfQuote::voteCount)
+                .reversed()
+                .thenComparing(bq -> bq.quote().qualityScore(), Comparator.reverseOrder())
+                .thenComparing(bq -> bq.quote().episodeDate(), Comparator.reverseOrder()))
         .toList();
   }
 }
