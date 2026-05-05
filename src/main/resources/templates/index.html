@@ -58,6 +58,10 @@
     <p id="quote-empty" th:if="${quote == null}" class="empty">Keine Zitate in dieser Kategorie.</p>
   </main>
 
+  <footer class="site-footer">
+    <a href="/impressum">Impressum</a>
+  </footer>
+
   <a id="next-btn" th:href="@{/(category=${currentCategory.name()})}" class="next-btn"
      th:data-category="${currentCategory.name()}">
     Nächstes Zitat
