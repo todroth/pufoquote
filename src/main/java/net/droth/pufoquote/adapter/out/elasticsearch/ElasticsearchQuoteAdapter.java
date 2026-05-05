@@ -30,6 +30,11 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
   private static final Set<Category> LOW_STOCK_CATEGORIES =
       Set.of(Category.INTERESTING, Category.META, Category.SERIOUS);
 
+  private enum ScoreTier {
+    TOP,
+    LOWER
+  }
+
   private final QuoteEsRepository esRepository;
   private final ElasticsearchClient esClient;
 
@@ -59,10 +64,8 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
 
   @Override
   public Optional<Quote> findRandom(Category category) {
-    boolean lowStock = LOW_STOCK_CATEGORIES.contains(category);
-    boolean pickScore5 = ThreadLocalRandom.current().nextDouble() < (lowStock ? 0.75 : 0.90);
     try {
-      Query filterQuery = buildQuery(category, pickScore5);
+      Query filterQuery = buildQuery(category, pickTier(category));
       var response =
           esClient.search(
               s ->
@@ -154,9 +157,14 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
     }
   }
 
-  private Query buildQuery(Category category, boolean score5Only) {
+  private ScoreTier pickTier(Category category) {
+    double threshold = LOW_STOCK_CATEGORIES.contains(category) ? 0.75 : 0.90;
+    return ThreadLocalRandom.current().nextDouble() < threshold ? ScoreTier.TOP : ScoreTier.LOWER;
+  }
+
+  private Query buildQuery(Category category, ScoreTier tier) {
     Query scoreFilter =
-        score5Only
+        tier == ScoreTier.TOP
             ? Query.of(q -> q.term(t -> t.field("qualityScore").value(5L)))
             : Query.of(
                 q ->
