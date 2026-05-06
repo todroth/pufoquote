@@ -19,4 +19,6 @@ public interface QuoteRepositoryPort {
   Optional<Quote> findById(String id);
 
   QuoteContext findContext(String episodeId, double startSeconds, int count);
+
+  List<Quote> findAllByEpisodeId(String episodeId);
 }

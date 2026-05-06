@@ -1,12 +1,14 @@
 package net.droth.pufoquote.adapter.out.elasticsearch;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
@@ -57,7 +59,7 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
   public void deleteAll() {
     try {
       esClient.deleteByQuery(d -> d.index(INDEX).query(q -> q.matchAll(m -> m)));
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException e) {
       log.warn("Could not delete all quotes: {}", e.getMessage());
     }
   }
@@ -80,7 +82,7 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
                                           .scoreMode(FunctionScoreMode.Multiply))),
               QuoteDocument.class);
       return response.hits().hits().stream().findFirst().map(hit -> toDomain(hit.source()));
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException e) {
       log.error("Failed to find random quote: {}", e.getMessage(), e);
       return Optional.empty();
     }
@@ -91,7 +93,7 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
     try {
       var response = esClient.get(g -> g.index(INDEX).id(id), QuoteDocument.class);
       return Optional.ofNullable(response.source()).map(this::toDomain);
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException e) {
       log.error("Failed to find quote by id {}: {}", id, e.getMessage(), e);
       return Optional.empty();
     }
@@ -151,7 +153,7 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
       List<String> after = afterResp.hits().hits().stream().map(h -> h.source().getText()).toList();
 
       return new QuoteContext(before, after);
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException e) {
       log.error("Failed to find context for episodeId {}: {}", episodeId, e.getMessage(), e);
       return new QuoteContext(List.of(), List.of());
     }
@@ -186,11 +188,31 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
                 b -> b.must(m -> m.matchAll(ma -> ma)).filter(scoreFilter).filter(categoryFilter)));
   }
 
+  @Override
+  public List<Quote> findAllByEpisodeId(String episodeId) {
+    try {
+      var response =
+          esClient.search(
+              s ->
+                  s.index(INDEX)
+                      .size(1000)
+                      .query(q -> q.term(t -> t.field("episodeId").value(episodeId))),
+              QuoteDocument.class);
+      return response.hits().hits().stream()
+          .map(hit -> toDomain(hit.source()))
+          .filter(Objects::nonNull)
+          .toList();
+    } catch (IOException | ElasticsearchException e) {
+      log.error("Failed to find quotes for episode {}: {}", episodeId, e.getMessage(), e);
+      return List.of();
+    }
+  }
+
   private void deleteExisting(String episodeId) {
     try {
       esClient.deleteByQuery(
           d -> d.index(INDEX).query(q -> q.term(t -> t.field("episodeId").value(episodeId))));
-    } catch (IOException e) {
+    } catch (IOException | ElasticsearchException e) {
       log.warn("Could not delete existing quotes for episode {}: {}", episodeId, e.getMessage());
     }
   }

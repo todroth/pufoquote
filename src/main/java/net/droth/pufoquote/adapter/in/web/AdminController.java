@@ -37,6 +37,25 @@ public class AdminController {
     return ResponseEntity.accepted().body("Indexing started. Check application logs for progress.");
   }
 
+  /**
+   * Reads all quotes currently in Elasticsearch and writes them to the categorization cache. Run
+   * this once after restoring an ES dump so that future reindexes are free and preserve quote IDs.
+   */
+  @PostMapping("/seed-categorization-cache")
+  public ResponseEntity<String> seedCategorizationCache() {
+    log.info("Categorization cache seed triggered via /admin/seed-categorization-cache");
+    taskExecutor.execute(
+        () -> {
+          try {
+            indexEpisodesUseCase.seedCategorizationCache();
+          } catch (Exception e) {
+            log.error("Cache seeding failed", e);
+          }
+        });
+    return ResponseEntity.accepted()
+        .body("Cache seeding started. Check application logs for progress.");
+  }
+
   /** Drops all existing quotes and re-indexes everything from the transcription cache. */
   @PostMapping("/reindex-all")
   public ResponseEntity<String> reindexAll() {

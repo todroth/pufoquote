@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.droth.pufoquote.domain.model.CategorizedSentence;
 import net.droth.pufoquote.domain.model.Category;
 import net.droth.pufoquote.domain.model.Classification;
 import net.droth.pufoquote.domain.model.Episode;
@@ -21,6 +22,7 @@ import net.droth.pufoquote.domain.model.Quote;
 import net.droth.pufoquote.domain.model.Segment;
 import net.droth.pufoquote.domain.model.SentenceWithTimestamp;
 import net.droth.pufoquote.domain.port.in.IndexEpisodesUseCase;
+import net.droth.pufoquote.domain.port.out.CategorizationCachePort;
 import net.droth.pufoquote.domain.port.out.CategorizationPort;
 import net.droth.pufoquote.domain.port.out.FeedPort;
 import net.droth.pufoquote.domain.port.out.QuoteRepositoryPort;
@@ -45,6 +47,7 @@ public class IndexEpisodesService implements IndexEpisodesUseCase {
   private final TranscriptionCachePort transcriptionCachePort;
   private final QuoteRepositoryPort quoteRepository;
   private final CategorizationPort categorizationPort;
+  private final CategorizationCachePort categorizationCache;
   private final SentenceSplitter sentenceSplitter;
 
   @Override
@@ -73,6 +76,35 @@ public class IndexEpisodesService implements IndexEpisodesUseCase {
     } finally {
       indexingInProgress.set(false);
     }
+  }
+
+  @Override
+  public void seedCategorizationCache() {
+    List<Episode> episodes = feedPort.fetchEpisodes();
+    int seeded = 0;
+    for (Episode episode : episodes) {
+      if (categorizationCache.load(episode.id()).isPresent()) {
+        continue;
+      }
+      List<Quote> quotes = quoteRepository.findAllByEpisodeId(episode.id());
+      if (quotes.isEmpty()) {
+        continue;
+      }
+      List<CategorizedSentence> sentences =
+          quotes.stream()
+              .map(
+                  q ->
+                      new CategorizedSentence(
+                          q.id(),
+                          q.text(),
+                          q.startSeconds(),
+                          q.categories().isEmpty() ? Category.NONE : q.categories().get(0),
+                          q.qualityScore()))
+              .toList();
+      categorizationCache.save(episode.id(), sentences);
+      seeded++;
+    }
+    log.info("Seeded categorization cache for {} episodes.", seeded);
   }
 
   private void doIndex(boolean force) {
@@ -122,16 +154,20 @@ public class IndexEpisodesService implements IndexEpisodesUseCase {
   }
 
   private List<Quote> extractAndCategorize(Episode episode, List<Segment> segments) {
+    Optional<List<CategorizedSentence>> cached = categorizationCache.load(episode.id());
+    if (cached.isPresent()) {
+      log.info("Using cached categorization for: {}", episode.title());
+      return toQuotes(episode, cached.get());
+    }
+
     List<SentenceWithTimestamp> sentences = sentenceSplitter.split(segments);
     log.debug("Extracted {} sentences from {} segments", sentences.size(), segments.size());
 
-    List<Quote> quotes = new ArrayList<>();
+    List<CategorizedSentence> categorized = new ArrayList<>();
 
-    // Process in batches of CATEGORIZATION_BATCH_SIZE
     for (int i = 0; i < sentences.size(); i += CATEGORIZATION_BATCH_SIZE) {
       List<SentenceWithTimestamp> batch =
           sentences.subList(i, Math.min(i + CATEGORIZATION_BATCH_SIZE, sentences.size()));
-
       List<String> texts = batch.stream().map(SentenceWithTimestamp::text).toList();
       List<String> ctxBefore =
           sentences.subList(Math.max(0, i - CONTEXT_WINDOW), i).stream()
@@ -154,23 +190,39 @@ public class IndexEpisodesService implements IndexEpisodesUseCase {
                 ? classifications.get(j)
                 : new Classification(Category.NONE, 1);
         SentenceWithTimestamp sentence = batch.get(j);
-        int wordCount = sentence.text().trim().split("\\s+").length;
-        quotes.add(
-            new Quote(
+        categorized.add(
+            new CategorizedSentence(
                 UUID.randomUUID().toString(),
-                episode.id(),
-                episode.title(),
-                episode.date() != null ? episode.date().toString() : "",
-                episode.episodeUrl(),
-                episode.mp3Url(),
-                sentence.startSeconds(),
                 sentence.text(),
-                wordCount,
-                classification.qualityScore(),
-                List.of(classification.category())));
+                sentence.startSeconds(),
+                classification.category(),
+                classification.qualityScore()));
       }
     }
-    return quotes;
+
+    categorizationCache.save(episode.id(), categorized);
+    return toQuotes(episode, categorized);
+  }
+
+  private List<Quote> toQuotes(Episode episode, List<CategorizedSentence> categorized) {
+    return categorized.stream()
+        .map(
+            cs -> {
+              int wordCount = cs.text().trim().split("\\s+").length;
+              return new Quote(
+                  cs.id(),
+                  episode.id(),
+                  episode.title(),
+                  episode.date() != null ? episode.date().toString() : "",
+                  episode.episodeUrl(),
+                  episode.mp3Url(),
+                  cs.startSeconds(),
+                  cs.text(),
+                  wordCount,
+                  cs.qualityScore(),
+                  List.of(cs.category()));
+            })
+        .toList();
   }
 
   private Path downloadMp3(String url) throws IOException {
