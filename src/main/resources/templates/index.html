@@ -28,11 +28,11 @@
       <div id="context-after" class="context-area" style="display:none"></div>
       <div class="quote-divider"></div>
       <div class="quote-meta">
-        <span id="quote-category" th:text="${quote.category}"></span>
-        <span class="meta-dot">·</span>
         <a id="quote-episode" th:href="${quote.episodeUrl}" target="_blank" th:text="${quote.episodeName}"></a>
         <span class="meta-dot">·</span>
         <span id="quote-date" th:text="${quote.episodeDate}"></span>
+        <span class="meta-dot">·</span>
+        <span id="quote-category" th:text="${quote.category}"></span>
         <span class="meta-dot">·</span>
         <span id="quote-timestamp">~<span th:text="${quote.timestamp}"></span></span>
         <span class="meta-dot">·</span>
