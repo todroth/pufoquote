@@ -31,7 +31,7 @@
     <ol class="best-items" th:if="${not #lists.isEmpty(items)}">
       <li th:each="item : ${items}" class="best-item">
         <a th:href="@{/quote/{id}(id=${item.quote.id})}" class="best-item-link">
-          <span class="best-rank-badge" th:text="${item.qualityScore}">5</span>
+          <span class="best-rank-badge" th:text="${item.quote.voteCount}">0</span>
           <div class="best-item-body">
             <p class="best-quote-text" th:text="${item.quote.text}"></p>
             <span class="best-meta" th:text="${item.quote.timestamp}"></span>
