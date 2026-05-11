@@ -217,6 +217,8 @@ public class QuoteController {
   }
 
   private QuoteViewModel toViewModel(Quote quote, Set<String> votedIds) {
+    String category =
+        quote.categories().isEmpty() ? "" : quote.categories().get(0).getDisplayName();
     return new QuoteViewModel(
         quote.id(),
         quote.text(),
@@ -225,7 +227,8 @@ public class QuoteController {
         formatTimestamp(quote.startSeconds()),
         quote.episodeUrl(),
         getVoteCountUseCase.getVoteCount(quote.id()),
-        votedIds.contains(quote.id()));
+        votedIds.contains(quote.id()),
+        category);
   }
 
   private static Set<String> parseCookie(String cookieValue) {

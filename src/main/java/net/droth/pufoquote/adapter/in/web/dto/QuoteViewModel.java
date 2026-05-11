@@ -9,4 +9,5 @@ public record QuoteViewModel(
     String timestamp,
     String episodeUrl,
     long voteCount,
-    boolean alreadyVoted) {}
+    boolean alreadyVoted,
+    String category) {}
