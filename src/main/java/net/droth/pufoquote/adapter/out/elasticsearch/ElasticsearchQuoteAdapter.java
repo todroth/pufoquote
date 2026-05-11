@@ -15,6 +15,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.droth.pufoquote.domain.model.Category;
+import net.droth.pufoquote.domain.model.EpisodeSummary;
 import net.droth.pufoquote.domain.model.Quote;
 import net.droth.pufoquote.domain.model.QuoteContext;
 import net.droth.pufoquote.domain.port.out.QuoteRepositoryPort;
@@ -186,6 +187,44 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
         q ->
             q.bool(
                 b -> b.must(m -> m.matchAll(ma -> ma)).filter(scoreFilter).filter(categoryFilter)));
+  }
+
+  @Override
+  public List<EpisodeSummary> findAllEpisodes() {
+    try {
+      var response =
+          esClient.search(
+              s ->
+                  s.index(INDEX)
+                      .size(500)
+                      .source(
+                          src ->
+                              src.filter(
+                                  f ->
+                                      f.includes(
+                                          List.of(
+                                              "episodeId",
+                                              "episodeName",
+                                              "episodeDate",
+                                              "episodeUrl"))))
+                      .collapse(c -> c.field("episodeId"))
+                      .sort(so -> so.field(f -> f.field("episodeDate").order(SortOrder.Desc))),
+              QuoteDocument.class);
+      return response.hits().hits().stream()
+          .map(hit -> hit.source())
+          .filter(Objects::nonNull)
+          .map(
+              doc ->
+                  new EpisodeSummary(
+                      doc.getEpisodeId(),
+                      doc.getEpisodeName(),
+                      doc.getEpisodeDate(),
+                      doc.getEpisodeUrl()))
+          .toList();
+    } catch (IOException | ElasticsearchException e) {
+      log.error("Failed to find all episodes: {}", e.getMessage(), e);
+      return List.of();
+    }
   }
 
   @Override

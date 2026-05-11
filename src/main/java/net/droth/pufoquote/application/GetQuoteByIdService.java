@@ -7,6 +7,7 @@ import net.droth.pufoquote.domain.port.in.GetQuoteByIdUseCase;
 import net.droth.pufoquote.domain.port.out.QuoteRepositoryPort;
 import org.springframework.stereotype.Service;
 
+/** Retrieves a single quote by its ID. */
 @Service
 @RequiredArgsConstructor
 public class GetQuoteByIdService implements GetQuoteByIdUseCase {

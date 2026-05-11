@@ -9,6 +9,7 @@ import net.droth.pufoquote.domain.port.out.QuoteRepositoryPort;
 import net.droth.pufoquote.domain.port.out.VoteRepositoryPort;
 import org.springframework.stereotype.Service;
 
+/** Returns the top-voted quotes ranked by vote count, quality score, and episode date. */
 @Service
 @RequiredArgsConstructor
 public class GetBestOfService implements GetBestOfQuotesUseCase {

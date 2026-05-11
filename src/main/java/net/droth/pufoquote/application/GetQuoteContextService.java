@@ -7,6 +7,7 @@ import net.droth.pufoquote.domain.port.in.GetQuoteContextUseCase;
 import net.droth.pufoquote.domain.port.out.QuoteRepositoryPort;
 import org.springframework.stereotype.Service;
 
+/** Retrieves the sentences immediately before and after a given quote in the same episode. */
 @Service
 @RequiredArgsConstructor
 public class GetQuoteContextService implements GetQuoteContextUseCase {

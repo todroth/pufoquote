@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title th:text="${episodeName != null ? episodeName + ' – DAS PODCAST UFO' : 'Episode – DAS PODCAST UFO'}">Episode – DAS PODCAST UFO</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛸</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+  <header class="header">
+    <a href="/" class="header-link">
+      <span class="header-emoji">🛸</span>
+      <span class="header-title">Das Podcast UFO</span>
+    </a>
+  </header>
+
+  <nav th:replace="~{fragments/nav :: categories}"></nav>
+
+  <main class="quote-area">
+    <a href="/episodes" class="episode-back">← Alle Episoden</a>
+    <h1 class="best-heading" th:text="${episodeName}">Episode</h1>
+    <p class="best-meta" th:if="${episodeDate != null}" th:text="${episodeDate}"></p>
+
+    <p th:if="${#lists.isEmpty(items)}" class="empty">Keine herausragenden Zitate für diese Episode.</p>
+
+    <ol class="best-items" th:if="${not #lists.isEmpty(items)}">
+      <li th:each="item : ${items}" class="best-item">
+        <a th:href="@{/quote/{id}(id=${item.quote.id})}" class="best-item-link">
+          <span class="best-rank-badge" th:text="${item.qualityScore}">5</span>
+          <div class="best-item-body">
+            <p class="best-quote-text" th:text="${item.quote.text}"></p>
+            <span class="best-meta" th:text="${item.quote.timestamp}"></span>
+          </div>
+        </a>
+      </li>
+    </ol>
+  </main>
+
+  <footer class="site-footer">
+    <a href="/impressum">Impressum</a>
+  </footer>
+
+  <script src="/js/main.js"></script>
+
+</body>
+</html>

@@ -18,6 +18,7 @@ public class SentenceSplitter {
 
   private static final int MIN_WORD_COUNT = 6;
 
+  /** Splits the given audio blocks into complete sentences with timestamps. */
   public List<SentenceWithTimestamp> split(List<Segment> blocks) {
     List<SentenceWithTimestamp> result = new ArrayList<>();
     StringBuilder buffer = new StringBuilder();

@@ -375,17 +375,32 @@ body {
   }
 }
 
-/* ── Beste pill ── */
-.cat-btn.beste-btn {
+/* ── Beste / Episoden pills ── */
+.cat-btn.beste-btn,
+.cat-btn.episoden-btn {
   background: #111;
   color: #fff;
   border-color: #111;
 }
 
-.cat-btn.beste-btn:hover {
+.cat-btn.beste-btn:hover,
+.cat-btn.episoden-btn:hover {
   background: #333;
   border-color: #333;
   color: #fff;
+}
+
+/* ── Episode detail back link ── */
+.episode-back {
+  display: inline-block;
+  font-size: 0.75rem;
+  color: #888;
+  text-decoration: none;
+  margin-bottom: 0.75rem;
+}
+
+.episode-back:hover {
+  color: #111;
 }
 
 /* ── Like button ── */

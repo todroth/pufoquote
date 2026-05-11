@@ -3,6 +3,7 @@ package net.droth.pufoquote.domain.port.out;
 import java.util.List;
 import java.util.Optional;
 import net.droth.pufoquote.domain.model.Category;
+import net.droth.pufoquote.domain.model.EpisodeSummary;
 import net.droth.pufoquote.domain.model.Quote;
 import net.droth.pufoquote.domain.model.QuoteContext;
 
@@ -21,4 +22,6 @@ public interface QuoteRepositoryPort {
   QuoteContext findContext(String episodeId, double startSeconds, int count);
 
   List<Quote> findAllByEpisodeId(String episodeId);
+
+  List<EpisodeSummary> findAllEpisodes();
 }

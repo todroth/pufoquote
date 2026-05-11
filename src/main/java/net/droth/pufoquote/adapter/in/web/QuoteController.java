@@ -2,12 +2,15 @@ package net.droth.pufoquote.adapter.in.web;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import net.droth.pufoquote.adapter.in.web.dto.BestOfViewModel;
+import net.droth.pufoquote.adapter.in.web.dto.EpisodeQuoteViewModel;
+import net.droth.pufoquote.adapter.in.web.dto.EpisodeSummaryViewModel;
 import net.droth.pufoquote.adapter.in.web.dto.QuoteViewModel;
 import net.droth.pufoquote.adapter.in.web.dto.VoteResponse;
 import net.droth.pufoquote.domain.model.Category;
@@ -15,6 +18,8 @@ import net.droth.pufoquote.domain.model.Quote;
 import net.droth.pufoquote.domain.model.QuoteContext;
 import net.droth.pufoquote.domain.model.VoteResult;
 import net.droth.pufoquote.domain.port.in.GetBestOfQuotesUseCase;
+import net.droth.pufoquote.domain.port.in.GetEpisodeQuotesUseCase;
+import net.droth.pufoquote.domain.port.in.GetEpisodesUseCase;
 import net.droth.pufoquote.domain.port.in.GetQuoteByIdUseCase;
 import net.droth.pufoquote.domain.port.in.GetQuoteContextUseCase;
 import net.droth.pufoquote.domain.port.in.GetRandomQuoteUseCase;
@@ -32,6 +37,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+/** MVC controller for quote pages and the JSON quote API. */
 @Controller
 @RequiredArgsConstructor
 public class QuoteController {
@@ -45,7 +51,10 @@ public class QuoteController {
   private final GetVoteCountUseCase getVoteCountUseCase;
   private final VoteForQuoteUseCase voteForQuoteUseCase;
   private final GetBestOfQuotesUseCase getBestOfQuotesUseCase;
+  private final GetEpisodesUseCase getEpisodesUseCase;
+  private final GetEpisodeQuotesUseCase getEpisodeQuotesUseCase;
 
+  /** Renders the main quote page with a random quote for the given category. */
   @GetMapping("/")
   public String index(
       @RequestParam(name = "category", defaultValue = "RANDOM") String categoryParam,
@@ -62,6 +71,7 @@ public class QuoteController {
     return "index";
   }
 
+  /** Renders the quote page for a specific quote by ID (shareable link). */
   @GetMapping("/quote/{id}")
   public String quoteById(
       @PathVariable String id,
@@ -77,6 +87,7 @@ public class QuoteController {
     return "index";
   }
 
+  /** Returns a specific quote by ID as JSON. */
   @GetMapping(value = "/api/quote/{id}")
   @ResponseBody
   public ResponseEntity<QuoteViewModel> apiQuoteById(
@@ -90,6 +101,7 @@ public class QuoteController {
         .orElse(ResponseEntity.notFound().build());
   }
 
+  /** Returns a random quote for the given category as JSON. */
   @GetMapping(value = "/api/quote")
   @ResponseBody
   public ResponseEntity<QuoteViewModel> apiQuote(
@@ -104,6 +116,7 @@ public class QuoteController {
         .orElse(ResponseEntity.noContent().build());
   }
 
+  /** Returns the surrounding context sentences for a quote as JSON. */
   @GetMapping(value = "/api/quote/{id}/context")
   @ResponseBody
   public ResponseEntity<QuoteContext> apiContext(@PathVariable String id) {
@@ -113,6 +126,7 @@ public class QuoteController {
         .orElse(ResponseEntity.notFound().build());
   }
 
+  /** Casts or retracts a vote for a quote; updates the voted-quotes cookie. */
   @PostMapping(value = "/api/quote/{id}/vote")
   @ResponseBody
   public ResponseEntity<VoteResponse> vote(
@@ -131,6 +145,7 @@ public class QuoteController {
     return ResponseEntity.ok(new VoteResponse(result.voteCount(), result.accepted()));
   }
 
+  /** Renders the best-of page with the top 20 most-voted quotes. */
   @GetMapping("/best")
   public String best(
       @CookieValue(name = COOKIE_NAME, defaultValue = "") String votedCookie, Model model) {
@@ -145,6 +160,7 @@ public class QuoteController {
     return "best";
   }
 
+  /** Returns a paginated slice of best-of quotes as JSON. */
   @GetMapping(value = "/api/best")
   @ResponseBody
   public List<BestOfViewModel> apiBest(
@@ -155,6 +171,49 @@ public class QuoteController {
     return getBestOfQuotesUseCase.getQuotes(offset, limit).stream()
         .map(b -> new BestOfViewModel(toViewModel(b.quote(), voted), b.voteCount()))
         .toList();
+  }
+
+  /** Renders the episodes list page. */
+  @GetMapping("/episodes")
+  public String episodes(Model model) {
+    List<EpisodeSummaryViewModel> episodes =
+        getEpisodesUseCase.getEpisodes().stream()
+            .map(
+                e ->
+                    new EpisodeSummaryViewModel(
+                        e.episodeId(), e.episodeName(), e.episodeDate(), e.episodeUrl()))
+            .toList();
+    model.addAttribute("episodes", episodes);
+    model.addAttribute("categories", Category.uiValues());
+    model.addAttribute("currentCategory", null);
+    return "episodes";
+  }
+
+  /** Renders the episode detail page with the high-quality quotes for one episode. */
+  @GetMapping("/episodes/{episodeId}")
+  public String episodeDetail(
+      @PathVariable String episodeId,
+      @CookieValue(name = COOKIE_NAME, defaultValue = "") String votedCookie,
+      Model model) {
+    Set<String> voted = parseCookie(votedCookie);
+    List<Quote> quotes = getEpisodeQuotesUseCase.getQuotes(episodeId);
+    List<EpisodeQuoteViewModel> items =
+        quotes.stream()
+            .map(q -> new EpisodeQuoteViewModel(toViewModel(q, voted), q.qualityScore()))
+            .sorted(
+                Comparator.<EpisodeQuoteViewModel, Long>comparing(
+                        e -> e.quote().voteCount(), Comparator.reverseOrder())
+                    .thenComparing(EpisodeQuoteViewModel::qualityScore, Comparator.reverseOrder()))
+            .toList();
+    model.addAttribute("items", items);
+    if (!quotes.isEmpty()) {
+      model.addAttribute("episodeName", quotes.get(0).episodeName());
+      model.addAttribute("episodeDate", quotes.get(0).episodeDate());
+      model.addAttribute("episodeUrl", quotes.get(0).episodeUrl());
+    }
+    model.addAttribute("categories", Category.uiValues());
+    model.addAttribute("currentCategory", null);
+    return "episode-detail";
   }
 
   private QuoteViewModel toViewModel(Quote quote, Set<String> votedIds) {

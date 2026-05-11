@@ -7,6 +7,7 @@ import net.droth.pufoquote.domain.port.in.VoteForQuoteUseCase;
 import net.droth.pufoquote.domain.port.out.VoteRepositoryPort;
 import org.springframework.stereotype.Service;
 
+/** Casts or retracts a vote for a quote, enforcing one vote per browser session. */
 @Service
 @RequiredArgsConstructor
 public class VoteForQuoteService implements VoteForQuoteUseCase {
