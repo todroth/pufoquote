@@ -34,7 +34,7 @@
           <span class="best-rank-badge" th:text="${item.quote.voteCount}">0</span>
           <div class="best-item-body">
             <p class="best-quote-text" th:text="${item.quote.text}"></p>
-            <span class="best-meta" th:text="${item.quote.timestamp}"></span>
+            <span class="best-meta" th:text="'~' + ${item.quote.timestamp}"></span>
           </div>
         </a>
       </li>

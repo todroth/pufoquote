@@ -7,6 +7,7 @@ import co.elastic.clients.elasticsearch._types.query_dsl.FunctionScoreMode;
 import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -220,6 +221,10 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
                       doc.getEpisodeName(),
                       doc.getEpisodeDate(),
                       doc.getEpisodeUrl()))
+          .sorted(
+              Comparator.comparing(EpisodeSummary::episodeDate)
+                  .reversed()
+                  .thenComparing(EpisodeSummary::episodeName))
           .toList();
     } catch (IOException | ElasticsearchException e) {
       log.error("Failed to find all episodes: {}", e.getMessage(), e);
