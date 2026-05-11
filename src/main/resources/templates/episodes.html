@@ -28,7 +28,7 @@
 
     <ol class="best-items" th:if="${not #lists.isEmpty(episodes)}">
       <li th:each="ep : ${episodes}" class="best-item">
-        <a th:href="@{/episodes/{id}(id=${ep.episodeId})}" class="best-item-link">
+        <a th:href="@{/episodes/{id}(id=${ep.encodedId})}" class="best-item-link">
           <div class="best-item-body">
             <p class="best-quote-text" th:text="${ep.episodeName}"></p>
             <span class="best-meta" th:text="${ep.episodeDate}"></span>

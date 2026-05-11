@@ -1,7 +1,9 @@
 package net.droth.pufoquote.adapter.in.web;
 
 import jakarta.servlet.http.HttpServletResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -181,7 +183,11 @@ public class QuoteController {
             .map(
                 e ->
                     new EpisodeSummaryViewModel(
-                        e.episodeId(), e.episodeName(), e.episodeDate(), e.episodeUrl()))
+                        e.episodeId(),
+                        encodeId(e.episodeId()),
+                        e.episodeName(),
+                        e.episodeDate(),
+                        e.episodeUrl()))
             .toList();
     model.addAttribute("episodes", episodes);
     model.addAttribute("categories", Category.uiValues());
@@ -190,11 +196,12 @@ public class QuoteController {
   }
 
   /** Renders the episode detail page with the high-quality quotes for one episode. */
-  @GetMapping("/episodes/{episodeId}")
+  @GetMapping("/episodes/{encodedId}")
   public String episodeDetail(
-      @PathVariable String episodeId,
+      @PathVariable String encodedId,
       @CookieValue(name = COOKIE_NAME, defaultValue = "") String votedCookie,
       Model model) {
+    String episodeId = decodeId(encodedId);
     Set<String> voted = parseCookie(votedCookie);
     List<Quote> quotes = getEpisodeQuotesUseCase.getQuotes(episodeId);
     List<EpisodeQuoteViewModel> items =
@@ -207,9 +214,10 @@ public class QuoteController {
             .toList();
     model.addAttribute("items", items);
     if (!quotes.isEmpty()) {
-      model.addAttribute("episodeName", quotes.get(0).episodeName());
-      model.addAttribute("episodeDate", quotes.get(0).episodeDate());
-      model.addAttribute("episodeUrl", quotes.get(0).episodeUrl());
+      Quote first = quotes.get(0);
+      model.addAttribute("episodeName", first.episodeName());
+      model.addAttribute("episodeDate", first.episodeDate());
+      model.addAttribute("episodeUrl", first.episodeUrl());
     }
     model.addAttribute("categories", Category.uiValues());
     model.addAttribute("currentCategory", null);
@@ -250,6 +258,16 @@ public class QuoteController {
         .path("/")
         .build()
         .toString();
+  }
+
+  private static String encodeId(String id) {
+    return Base64.getUrlEncoder()
+        .withoutPadding()
+        .encodeToString(id.getBytes(StandardCharsets.UTF_8));
+  }
+
+  private static String decodeId(String encoded) {
+    return new String(Base64.getUrlDecoder().decode(encoded), StandardCharsets.UTF_8);
   }
 
   private static String formatTimestamp(double totalSeconds) {
