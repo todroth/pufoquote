@@ -30,13 +30,22 @@
 
     <ol class="best-items" th:if="${not #lists.isEmpty(items)}">
       <li th:each="item : ${items}" class="best-item">
-        <a th:href="@{/quote/{id}(id=${item.quote.id})}" class="best-item-link">
-          <span class="best-rank-badge" th:text="${item.quote.voteCount}">0</span>
-          <div class="best-item-body">
+        <span class="best-rank-badge" th:text="${item.quote.voteCount}">0</span>
+        <div class="best-item-body">
+          <a th:href="@{/quote/{id}(id=${item.quote.id})}" class="best-item-link">
             <p class="best-quote-text" th:text="${item.quote.text}"></p>
-            <span class="best-meta" th:text="'~' + ${item.quote.timestamp}"></span>
+          </a>
+          <div class="best-meta">
+            <span th:text="'~' + ${item.quote.timestamp}"></span>
+            <span>·</span>
+            <button class="like-btn best-like-btn" type="button"
+                    th:classappend="${item.quote.alreadyVoted()} ? ' liked' : ''"
+                    th:data-quote-id="${item.quote.id}"
+                    th:data-already-liked="${item.quote.alreadyVoted()}">
+              👍 <span class="like-count" th:text="${item.quote.voteCount}">0</span>
+            </button>
           </div>
-        </a>
+        </div>
       </li>
     </ol>
   </main>

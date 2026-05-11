@@ -441,12 +441,17 @@ body {
   padding: 0;
 }
 
-.best-item-link {
+.best-item {
   display: flex;
   gap: 1rem;
   align-items: flex-start;
+}
+
+.best-item-link {
+  display: block;
   text-decoration: none;
   color: inherit;
+  margin-bottom: 0.35rem;
 }
 
 .best-rank-badge {
@@ -481,6 +486,10 @@ body {
   font-size: 0.7rem;
   color: #aaa;
   letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 .load-more-btn {

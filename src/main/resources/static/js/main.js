@@ -209,6 +209,23 @@
     });
   }
 
+  // ── Best-of / episode-detail page: like buttons ──
+  document.addEventListener('click', async function (e) {
+    const btn = e.target.closest('.best-like-btn');
+    if (!btn) return;
+    const quoteId = btn.dataset.quoteId;
+    if (!quoteId) return;
+    try {
+      const res = await fetch('/api/quote/' + encodeURIComponent(quoteId) + '/vote', { method: 'POST' });
+      if (!res.ok) return;
+      const data = await res.json();
+      btn.classList.toggle('liked', data.alreadyVoted);
+      btn.dataset.alreadyLiked = data.alreadyVoted ? 'true' : 'false';
+      const likeCount = btn.querySelector('.like-count');
+      if (likeCount) likeCount.textContent = data.voteCount;
+    } catch (_) {}
+  });
+
   // ── Best-of page: load more ──
   const loadMoreBtn = document.getElementById('load-more-btn');
   if (loadMoreBtn) {
@@ -225,12 +242,20 @@
           const li = document.createElement('li');
           li.className = 'best-item';
           li.innerHTML =
-            '<a href="/quote/' + escHtml(item.quote.id) + '" class="best-item-link">' +
             '<span class="best-rank-badge">' + escHtml(String(item.voteCount)) + '</span>' +
             '<div class="best-item-body">' +
+            '<a href="/quote/' + escHtml(item.quote.id) + '" class="best-item-link">' +
             '<p class="best-quote-text">' + escHtml(item.quote.text) + '</p>' +
-            '<span class="best-meta">' + escHtml(item.quote.episodeName) + ' · ' + escHtml(item.quote.episodeDate) + '</span>' +
-            '</div></a>';
+            '</a>' +
+            '<div class="best-meta">' +
+            '<span>' + escHtml(item.quote.episodeName) + ' · ' + escHtml(item.quote.episodeDate) + '</span>' +
+            '<span>·</span>' +
+            '<button class="like-btn best-like-btn' + (item.quote.alreadyVoted ? ' liked' : '') + '"' +
+            ' type="button" data-quote-id="' + escHtml(item.quote.id) + '"' +
+            ' data-already-liked="' + (item.quote.alreadyVoted ? 'true' : 'false') + '">' +
+            '👍 <span class="like-count">' + escHtml(String(item.quote.voteCount)) + '</span>' +
+            '</button>' +
+            '</div></div>';
           list.appendChild(li);
         });
         offset += items.length;
