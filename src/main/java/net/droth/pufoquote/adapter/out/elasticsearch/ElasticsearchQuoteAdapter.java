@@ -224,7 +224,7 @@ class ElasticsearchQuoteAdapter implements QuoteRepositoryPort {
           .sorted(
               Comparator.comparing(EpisodeSummary::episodeDate)
                   .reversed()
-                  .thenComparing(EpisodeSummary::episodeName))
+                  .thenComparing(Comparator.comparing(EpisodeSummary::episodeName).reversed()))
           .toList();
     } catch (IOException | ElasticsearchException e) {
       log.error("Failed to find all episodes: {}", e.getMessage(), e);
